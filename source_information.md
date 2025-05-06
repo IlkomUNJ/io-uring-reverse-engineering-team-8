@@ -7,6 +7,144 @@ Store io_madvice & io_fadvice structures, both have the same exact attributes. W
 
 ## another source
 
+### epoll.c
+
+### eventfd.c
+
+### fdinfo.c
+
+### filrtable.c
+
+### fs.c
+
+### futex.c
+
+### io_uring.c
+
+### io-wq.c
+
+### kbuf.c
+
+### memmap.c
+
+### msg_ring.c
+
+### napi.c
+
+### net.c
+
+### nop.c
+
+### notif.c
+
+### opdef.c
+
+### openclose.c
+
+### zcrx.c
+
+### poll.c
+
+### register.c
+
+### rsrc.c
+
+### rw.c
+
+### splice.c
+
+### sqpoll.c
+
+### ststx.c
+
+### sync.c 
+
+### tctx.c 
+
+### timeout.c
+
+### truncate.c
+
+### uring_cmd.c
+
+### waitid.c
+
+### xattr.c
+
+### zcrx.c
+
+
 ## Headers
-### advice.h
 Just declare the function specification. 
+
+### advice.h
+
+### epoll.h
+
+### eventfd.h
+
+### fdinfo.h
+
+### filrtable.h
+
+### fs.h
+
+### futex.h
+
+### io_uring.h
+
+### io-wq.h
+
+### kbuf.h
+
+### memmap.h
+
+### msg_ring.h
+
+### napi.h
+
+### net.h
+
+### nop.h
+
+### notif.h
+
+### opdef.h
+
+### openclose.h
+
+### zcrx.h
+
+### openclose.h
+
+### poll.h
+
+### refs.h
+
+### register.h
+
+### rsrc.h
+
+### rw.h
+
+### slist.h
+
+### splice.h
+
+### sqpoll.h
+
+### statx.h
+
+### sync.h
+
+### tctx.h
+
+### timeout.h
+
+### truncate.h
+
+### uring_cmd.h
+
+### waitid.h
+
+### xattr.h
