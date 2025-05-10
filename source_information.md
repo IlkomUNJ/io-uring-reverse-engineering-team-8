@@ -135,33 +135,60 @@ Just declare the function specification.
 ### msg_ring.h
 
 ### napi.h
-
+File ini adalah header untuk fitur integrasi NAPI (New API) busy-polling dalam io_uring, dan mendeklarasikan fungsi-fungsi serta makro inline yang berkaitan dengan tracking dan penggunaan NAPI ID untuk meningkatkan performa IO jaringan, khususnya saat menggunakan IO_URING_NAPI_TRACKING_DYNAMIC.
+Selain itu, file ini juga menyertakan versi fallback (fungsi kosong atau pengembalian error -EOPNOTSUPP) jika kernel tidak dikompilasi dengan CONFIG_NET_RX_BUSY_POLL.
 
 ### net.h
+File ini adalah header deklarasi untuk semua operasi io_uring yang berhubungan dengan jaringan (networking). Fungsi-fungsi yang dideklarasikan di sini seperti io_send, io_recv, io_accept, io_connect, io_socket, io_bind, io_listen, dan varian zerocopy (io_send_zc, io_sendmsg_zc) adalah bagian dari lapisan abstraksi io_uring terhadap socket-based IO.
+File ini berperan penting dalam menghubungkan subsistem socket Linux dengan io_uring, serta mempersiapkan operasi-operasi jaringan agar bisa dijalankan dalam mode async dan nonblocking melalui mekanisme submission queue io_uring.
 
 ### nop.h
+File ini merupakan header deklarasi untuk operasi NOP (No Operation) dalam io_uring. Meskipun NOP tidak melakukan IO nyata, file ini mendeklarasikan dua fungsi utama:
+- io_nop_prep(): menyiapkan struktur internal dari SQE berdasarkan flag dan parameter seperti fd, buf_index, dan len.
+- io_nop(): mengeksekusi operasi NOP, yang hanya menghasilkan hasil buatan (result) dan dapat digunakan untuk menguji berbagai jalur eksekusi seperti pemakaian file descriptor tetap (FIXED_FILE) atau buffer tetap (FIXED_BUFFER).
 
 ### notif.h
+File ini mendefinisikan kerangka notifikasi yang memungkinkan kernel memberi tahu io_uring bahwa buffer jaringan tertentu telah selesai digunakan—hal ini penting untuk menghindari kebocoran memori dan menjamin efisiensi dalam transfer data berskala besar menggunakan zerocopy.
 
 ### opdef.h
+File ini bertugas sebagai pondasi metadata dari semua operasi io_uring, memungkinkan sistem mengenali cara menangani tiap opcode secara efisien dan aman.
 
 ### openclose.h
+File ini merupakan header deklarasi untuk operasi manajemen file descriptor (FD) di io_uring, khususnya operasi open, close, dan install_fixed_fd.
+Fungsi-fungsi yang dideklarasikan antara lain:
+- io_openat_prep() dan io_openat2_prep() untuk menyiapkan parameter pembukaan file berdasarkan SQE.
+- io_openat() dan io_openat2() untuk benar-benar membuka file dengan berbagai mode (seperti O_TMPFILE, O_CLOEXEC) dan menangani pemasangan file descriptor tetap (fixed file slot).
+- io_close_prep() dan io_close() untuk menutup FD, baik normal maupun fixed, serta memastikan keamanan dalam konteks multithread (files_struct).
+- io_install_fixed_fd_prep() dan io_install_fixed_fd() untuk menerima FD dari syscall receive_fd dan memasangnya sebagai fixed FD dalam konteks io_uring.
+Fungsi-fungsi ini mendukung optimalisasi IO dengan menghindari overhead lookup file descriptor berulang, serta memungkinkan kontrol penuh terhadap manajemen FD dari userspace.
 
 ### zcrx.h
+File ini merupakan header untuk implementasi zero-copy receive (ZC RX) di io_uring, yaitu mekanisme untuk menerima data jaringan tanpa menyalin ke memori pengguna, melainkan langsung memetakan memori kernel ke aplikasi.
+File ini bertanggung jawab untuk mendukung IO jaringan ultra-efisien, khususnya untuk aplikasi berperforma tinggi seperti jaringan 100G yang memerlukan latensi rendah dan pemrosesan data langsung dari kernel.
 
 ### openclose.h
+File ini menyusun fondasi untuk pengelolaan file descriptor secara eksplisit dan efisien dalam io_uring, termasuk untuk skenario penggunaan ulang FD tanpa lookup serta pembukaan file nonblocking yang bisa diproses async.
 
 ### poll.h
+File ini mendeklarasikan struktur dan fungsi untuk mengelola operasi polling (pemantauan readiness IO) dalam io_uring, terutama untuk FD (file descriptor) yang mendukung operasi nonblocking.
+File ini memungkinkan io_uring memantau readiness tanpa blocking, menghemat syscall dan latency, serta penting dalam aplikasi skala besar seperti server jaringan atau event-loop berbasis epoll yang kini digantikan oleh io_uring.
 
 ### refs.h
+File ini berisi fungsi-fungsi manajemen reference counter untuk objek permintaan (io_kiocb) dalam io_uring. Reference counting digunakan untuk melacak jumlah referensi aktif terhadap request, sehingga objek hanya akan dibebaskan ketika tidak lagi digunakan di jalur eksekusi manapun.
+File ini menyediakan mekanisme reference counting yang efisien dan aman untuk memori dan sinkronisasi di lingkungan yang sangat konkuren seperti io_uring, terutama saat permintaan bisa diakses dari berbagai thread atau task work secara asinkron.
 
 ### register.h
+File ini merupakan header deklarasi untuk fungsi-fungsi terkait registrasi dan pengelolaan sumber daya (resource) dalam io_uring, terutama yang berkaitan dengan eventfd dan personality.
+File ini adalah bagian dari lapisan abstraksi registrasi resource yang memungkinkan io_uring melakukan optimisasi melalui pra-pendaftaran dan akses langsung terhadap file atau kredensial, tanpa harus melakukan syscall tambahan saat runtime.
 
 ### rsrc.h
+File ini mendefinisikan struktur data dan fungsi-fungsi terkait yang digunakan untuk mengelola sumber daya input/output (I/O) dalam konteks I/O asinkron menggunakan io_uring. File ini mencakup pengelolaan berbagai jenis sumber daya seperti file dan buffer yang digunakan dalam operasi I/O, serta alokasi dan pembebasan memori untuk sumber daya tersebut. Beberapa fungsi yang terdapat dalam file ini bertanggung jawab untuk menangani registrasi, pembaruan, dan pembebasan sumber daya, serta pengelolaan referensi untuk mencegah kebocoran memori. Ada juga struktur yang mengatur buffer dan vektor yang digunakan untuk memanipulasi data selama operasi I/O. Penggunaan struktur io_rsrc_node dan io_mapped_ubuf membantu dalam menyimpan informasi tentang buffer dan file yang terkait dengan I/O.
 
 ### rw.h
+File ini mengelola operasi baca/tulis asinkron menggunakan io_uring, termasuk persiapan dan eksekusi operasi I/O untuk buffer dan file. Struktur io_async_rw menyimpan informasi terkait vektor I/O, status iterasi, dan metadata. Fungsi-fungsinya menangani operasi baca/tulis, pembersihan, serta penanganan kesalahan dan cache memori untuk efisiensi.
 
 ### slist.h
+File ini berisi operasi untuk mengelola daftar terhubung (linked list) yang digunakan dalam konteks antrian tugas asinkron di io_uring. Fungsi-fungsi dalam file ini memungkinkan penambahan, penghapusan, pemotongan, dan pemindahan elemen dalam daftar, baik di awal, tengah, atau akhir daftar. Operasi tersebut dirancang untuk efisiensi dalam penanganan elemen yang akan dieksekusi, seperti penjadwalan tugas I/O. Struktur data yang digunakan adalah io_wq_work_node dan io_wq_work_list, yang berfungsi untuk mengelola antrian kerja dalam sistem.
 
 ### splice.h
 file ini berisi operasi yang dapat meningkatkan efisiensi tranfer data antara file descripptor tanpa melibatkan salinan ke memori pengguna
