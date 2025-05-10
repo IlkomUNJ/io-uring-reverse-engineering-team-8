@@ -75,14 +75,20 @@ File ini menangani operasi pembukaan (open) dan penutupan (close) file descripto
 File ini penting untuk mengatur siklus hidup file descriptor dalam io_uring, terutama untuk optimasi performa melalui FD tetap dan pembukaan nonblocking yang bisa diproses secara async bila diperlukan.
 
 ### zcrx.c
+File ini merupakan bagian dari subsistem I/O Uring di kernel Linux yang mengimplementasikan fitur Zero-Copy Receive (ZC RX). Fungsi utamanya adalah memungkinkan pengalihan data paket jaringan langsung dari antarmuka jaringan ke aplikasi pengguna tanpa melakukan salinan memori tambahan.
 
 ### poll.c
+File ini adalah bagian dari subsistem io_uring di kernel Linux yang khusus menangani operasi polling. Fungsi utama file ini adalah mengimplementasikan mekanisme polling asinkron yang memungkinkan aplikasi untuk memantau perubahan status pada file descriptor tanpa memblokir eksekusi.
 
 ### register.c
+File ini menangani operasi registrasi sumber daya untuk framework io_uring, yang memungkinkan aplikasi untuk mendaftarkan file descriptor, buffer, dan sumber daya lainnya ke kernel sebelum digunakan dalam operasi I/O asinkron. Registrasi ini membantu meningkatkan performa dengan mengurangi overhead sistem ketika operasi I/O dilakukan berulang kali.
+File ini menjembatani antara aplikasi pengguna dengan kernel untuk mengoptimalkan operasi I/O asinkron dengan meminimalkan overhead perpindahan data dan perubahan konteks.
 
 ### rsrc.c
 
+
 ### rw.c
+
 
 ### splice.c
 file ini berisi implementasi operasi splice dan tree dalam konteks io_uring, yang memungkinkan untuk memindahkan dan menyalin data antar file descriptor secara asinkron. Fungsi-fungsi dalam kode ini memastikan bahwa file descriptor dan offset yang digunakan valid dan bahwa data dipindahkan secara efisien tanpa perlu menggunakan buffer tambahan di ruang pengguna.
