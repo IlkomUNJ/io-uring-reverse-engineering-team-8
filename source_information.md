@@ -85,10 +85,10 @@ File ini menangani operasi registrasi sumber daya untuk framework io_uring, yang
 File ini menjembatani antara aplikasi pengguna dengan kernel untuk mengoptimalkan operasi I/O asinkron dengan meminimalkan overhead perpindahan data dan perubahan konteks.
 
 ### rsrc.c
-
+File ini menangani manajemen resource (sumber daya) untuk io_uring, terutama untuk proses pendaftaran, pembaruan, dan penghapusan buffer dan file descriptor yang telah di-pin agar dapat diakses secara langsung oleh kernel tanpa perlu validasi ulang dari user space. Secara teknis, file ini mengelola struktur io_rsrc_node untuk menyimpan metadata resource, menangani pemetaan dan akuntansi memori untuk buffer yang didaftarkan (termasuk huge pages), serta menyediakan mekanisme validasi dan impor buffer yang efisien ke dalam kernel I/O path.
 
 ### rw.c
-
+File ini menangani operasi read dan write untuk io_uring dengan mendukung jalur sinkron dan asinkron, serta pengelolaan buffer pengguna maupun buffer terdaftar (registered buffers). Secara teknis, file ini melakukan preparsing dan importing data dari user space ke struktur kernel (seperti iov_iter), mempersiapkan objek kiocb untuk keperluan blok I/O, dan mengelola penyelesaian I/O melalui callback seperti io_complete_rw. File ini juga mendukung mode fixed-buffer, multishot, dan I/O polling (IOPOLL), serta mengatur retry untuk I/O yang perlu menunggu page cache siap (misalnya pada buffered I/O tanpa O_DIRECT).
 
 ### splice.c
 file ini berisi implementasi operasi splice dan tree dalam konteks io_uring, yang memungkinkan untuk memindahkan dan menyalin data antar file descriptor secara asinkron. Fungsi-fungsi dalam kode ini memastikan bahwa file descriptor dan offset yang digunakan valid dan bahwa data dipindahkan secara efisien tanpa perlu menggunakan buffer tambahan di ruang pengguna.
@@ -106,6 +106,7 @@ file ini berisi implementasi sistem operasi linux, tepatnya untuk subsystem io_u
 file ini menangani manajemen hubungan antara proses dan ring io_uring yang memungkinkan efisiensi tinggi dengan menghindari syscall tambahan saat mengakses ring. selain itu file ini juga mengelola kontekstual data io uring antar thread dan memastikan alokasi dan pembersihan dilakukan dengan benar.
 
 ### timeout.c
+File ini mengelola operasi timeout di io_uring, termasuk penjadwalan, pembatalan, dan pembaruan timer. File ini memastikan proses timeout berjalan efisien dan sinkron dengan mekanisme io_uring.
 
 ### truncate.c
 file ini berisi implementasi sistelI/O asinkron di linux, khususnya untuk memotong dan memperluas panjang file dengan sistem call. file ini juga memberi efisiensi tinggi untuk operasi I/O tanpa perlu memblokir proses pengguna.
