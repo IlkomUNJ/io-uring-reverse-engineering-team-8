@@ -7,46 +7,43 @@ Store io_madvice & io_fadvice structures, both have the same exact attributes. W
 
 ## another source
 ### alloc_cache.c
+File ini mengelola cache alokasi memori untuk meningkatkan efisiensi penggunaan memori dalam io_uring. Fungsi io_alloc_cache_init menginisialisasi cache, io_alloc_cache_free membersihkan cache, dan io_cache_alloc_new mengalokasikan objek baru dengan opsi inisialisasi memori. File ini menggunakan fungsi kernel seperti kvmalloc_array dan kvfree untuk memastikan pengelolaan memori yang efisien.
 
 ### cancel.c
+File ini menangani pembatalan permintaan asinkron dalam io_uring. Fungsi seperti io_async_cancel_one dan io_try_cancel membatalkan permintaan berdasarkan file descriptor, data pengguna, atau opcode. Pembatalan sinkron dilakukan melalui io_sync_cancel. File ini terintegrasi dengan subsistem seperti polling, timeout, dan futex untuk memastikan pembatalan aman dan sumber daya dibersihkan dengan benar.
 
 ### epoll.c
-File ini digunakan untuk menangani operasi epoll dalam io_uring, seperti menambah, menghapus, atau mengubah event file descriptor (fd) yang ingin dipantau. Ada 2 struktur utama yaitu: io_epoll dan io_epoll_wait. Struktur io_epoll menyimpan informasi seperti fd tujuan, jenis operasi (seperti EPOLL_CTL_ADD), dan event yang akan dipasang. Fungsi io_epoll_ctl_prep() akan membaca data dari SQE (submission queue entry), lalu menyimpan nilai-nilai tersebut ke dalam struktur. Jika operasi membutuhkan event, event tersebut juga akan disalin dari user space. Fungsi ini membantu agar operasi epoll bisa dilakukan secara asynchronous lewat io_uring, tanpa perlu blocking seperti biasanya.
+File ini digunakan untuk menangani operasi epoll dalam io_uring, seperti menambah, menghapus, atau mengubah event file descriptor secara asinkron. Struktur io_epoll menyimpan informasi fd, jenis operasi, dan event, sementara io_epoll_wait digunakan untuk menunggu event. Fungsi io_epoll_ctl_prep membaca data dari SQE dan menyiapkan operasi epoll, memungkinkan eksekusi tanpa blocking.
 
 ### eventfd.c
-File ini mengatur bagaimana io_uring menangani eventfd, yaitu mekanisme sinkronisasi sederhana di Linux yang sering digunakan untuk notifikasi antar proses atau thread. Di sini, struktur io_ev_fd menyimpan informasi tentang konteks eventfd, status operasi, dan referensi yang dipakai untuk manajemen memori. Fungsi-fungsi seperti io_eventfd_put() dan io_eventfd_free() digunakan untuk mengelola siklus hidup (lifetime) dari struktur ini, memastikan bahwa memori dibebaskan dengan aman setelah tidak digunakan lagi. Selain itu, ada fungsi io_eventfd_do_signal() yang bertugas untuk mengirim sinyal (notifikasi) ketika dibutuhkan. Semua ini digunakan agar eventfd dapat bekerja secara aman dan efisien dalam ekosistem io_uring.
+File ini mengelola integrasi eventfd dalam io_uring untuk notifikasi sinkronisasi. Struktur io_ev_fd menyimpan konteks eventfd dan status operasi. Fungsi seperti io_eventfd_put dan io_eventfd_free memastikan manajemen memori yang aman, sementara io_eventfd_do_signal mengirim notifikasi saat diperlukan. File ini memastikan eventfd bekerja efisien dan aman dalam io_uring.
 
 ### fdinfo.c
-File ini digunakan untuk menampilkan informasi detail dari file descriptor io_uring lewat sistem /proc, khususnya di /proc/<pid>/fdinfo/<fd>. Fungsi utama dalam file ini adalah io_uring_show_fdinfo(), yang bertugas mencetak data internal seperti status antrian SQ (submit queue) dan CQ (completion queue), termasuk nilai head, tail, serta isi dari SQEs dan CQEs yang sedang diproses. Selain itu, jika io_uring berjalan dalam mode polling (IORING_SETUP_SQPOLL), file ini juga menampilkan informasi tentang thread yang menangani polling, termasuk PID dan CPU tempat thread itu berjalan. File ini juga menunjukkan daftar file dan buffer yang sedang digunakan oleh aplikasi melalui io_uring, serta informasi identitas pengguna (disebut “personalities”) yang mungkin berbeda tergantung operasi yang dijalankan. Di akhir, terdapat juga daftar permintaan I/O yang sedang dipantau (poll list), serta hasil I/O yang sempat tidak muat di antrian (cq overflow). Semua informasi ini sangat berguna untuk keperluan debugging dan pemantauan performa aplikasi yang menggunakan io_uring.
+File ini digunakan untuk menampilkan informasi detail file descriptor io_uring melalui procfs. Fungsi io_uring_show_fdinfo mencetak status antrian SQ dan CQ, buffer pengguna, file pengguna, dan daftar operasi. Jika fitur NAPI aktif, status pelacakan NAPI juga ditampilkan. Sinkronisasi menggunakan mutex dan spinlock memastikan data aman, berguna untuk debugging dan pemantauan io_uring.
 
 ### filetable.c
-File ini menangani pengelolaan file descriptor tetap (fixed file descriptors) untuk io_uring. File descriptor tetap memungkinkan aplikasi mendaftarkan file sekali dan menggunakannya berulang kali untuk operasi I/O tanpa membuka-tutup ulang, sehingga lebih efisien. Fungsi utamanya mencakup alokasi dan pembebasan tabel file (io_alloc_file_tables, io_free_file_tables), pencarian slot kosong dalam bitmap (io_file_bitmap_get), pemasangan file ke slot (__io_fixed_fd_install, io_fixed_fd_install), serta penghapusan file dari slot (io_fixed_fd_remove). Ada juga fitur untuk mengatur rentang slot yang boleh dialokasikan otomatis (io_register_file_alloc_range). Secara keseluruhan, file ini membantu meningkatkan kinerja dan efisiensi I/O di io_uring.
+File ini mengelola tabel file tetap dalam io_uring, memungkinkan file descriptor digunakan ulang untuk operasi I/O secara efisien. Fungsi seperti io_fixed_fd_install memasang file descriptor, sementara io_fixed_fd_remove menghapusnya. Alokasi slot dilakukan dinamis menggunakan bitmap, dengan validasi input dan sinkronisasi untuk mencegah konflik.
 
 ### fs.c
-File ini berisi kode C untuk menangani berbagai operasi file system (seperti rename, unlink, mkdir, symlink, dan link) dengan menggunakan API **io\_uring**, yang memungkinkan operasi I/O dilakukan secara asinkron dan lebih efisien di Linux. Setiap operasi memiliki struktur data sendiri untuk menyimpan informasi terkait file, seperti nama file, flags, dan descriptor file. Fungsi utama dalam kode ini dibagi menjadi tiga bagian: persiapan (prep), eksekusi (do\_<operation>), dan pembersihan (cleanup). Fungsi persiapan bertugas untuk memvalidasi parameter dan menyiapkan data yang diperlukan, seperti mengonversi alamat file atau path menjadi format yang bisa diproses. Eksekusi melakukan operasi file system yang sebenarnya (misalnya, mengubah nama file atau menghapus file), sementara pembersihan membersihkan sumber daya yang digunakan setelah operasi selesai.
-
-Dengan menggunakan **io\_uring**, kode ini memungkinkan operasi file dilakukan secara asinkron, mengurangi overhead I/O, dan meningkatkan efisiensi dalam menangani file system. Alur kerjanya dimulai dengan mempersiapkan data, kemudian menjalankan operasi, dan akhirnya membersihkan sumber daya setelah operasi selesai.
+File ini menangani operasi file system dalam io_uring, seperti rename, unlink, mkdir, symlink, dan link. Fungsi seperti io_renameat dan io_unlinkat memproses operasi secara asinkron, dengan pengelolaan nama file menggunakan getname dan putname. Validasi input dan sinkronisasi memastikan operasi aman dan bebas konflik.
 
 ### futex.c
-Kode ini mengimplementasikan beberapa operasi terkait **futex** dalam konteks **io\_uring**, yang merupakan API I/O asinkron di Linux. Futex adalah mekanisme sinkronisasi yang digunakan untuk menunggu dan membangunkan proses berdasarkan nilai tertentu di memori, sering kali digunakan untuk menghindari busy-waiting dalam program multithreading. Dalam kode ini, beberapa struktur data seperti `io_futex` dan `io_futex_data` digunakan untuk menyimpan informasi terkait dengan operasi futex, seperti alamat futex, nilai yang digunakan untuk membandingkan, dan berbagai flag futex. Fungsi utama dalam kode ini meliputi `io_futex_prep` yang menyiapkan data untuk operasi futex, `io_futex_wait` dan `io_futexv_wait` yang menangani penundaan (wait) pada futex, serta `io_futex_wake` yang digunakan untuk membangunkan proses yang sedang menunggu futex tersebut. Semua operasi ini dioptimalkan dengan menggunakan mekanisme **io\_uring**, yang memungkinkan I/O dilakukan secara asinkron tanpa memblokir thread, sehingga meningkatkan performa dalam aplikasi yang membutuhkan banyak operasi I/O. Fungsi-fungsi tersebut juga mencakup validasi data input untuk memastikan bahwa alamat dan nilai yang digunakan dalam operasi futex sesuai dengan yang diharapkan. Jika diperlukan, kode ini juga mendukung pembatalan operasi futex melalui fungsi seperti `io_futex_cancel`. Secara keseluruhan, kode ini berfokus pada penyempurnaan operasi futex dengan memanfaatkan keunggulan **io\_uring** untuk mencapai efisiensi tinggi dalam sistem Linux.
+File ini menangani operasi futex (fast userspace mutex) dalam io_uring, seperti wait dan wake, secara asinkron. Fungsi io_futex_wait menunggu kondisi tertentu, sedangkan io_futex_wake membangunkan thread. Operasi ini menggunakan struktur io_futex dan memastikan pengelolaan memori aman melalui cache alokasi serta sinkronisasi dengan futex_queue dan futex_unqueue.
 
 ### io_uring.c
-
+File ini bertanggung jawab atas inisialisasi dan pengelolaan utama sistem io_uring. Fungsi io_uring_setup membuat konteks io_uring, mengatur antrian SQ dan CQ, serta mendukung fitur seperti SQPOLL dan IOPOLL. Inisialisasi dilakukan melalui io_uring_init, yang mengatur cache memori, workqueue, dan sinkronisasi menggunakan spinlock dan mutex.
 
 ### io-wq.c
-
+File ini mengelola worker thread pool untuk operasi asinkron dalam io_uring. Fungsi seperti create_io_worker dan io_wq_exit_workers digunakan untuk membuat dan menghentikan worker. Worker dikelompokkan menjadi bounded dan unbounded, dengan hashing untuk mencegah pekerjaan dengan hash sama berjalan paralel. Sinkronisasi dilakukan menggunakan spinlock dan RCU untuk menjaga konsistensi data.
 
 ### kbuf.c
-Secara keseluruhan, kode ini bertujuan untuk mengelola buffer yang digunakan dalam operasi I/O di kernel Linux dengan menggunakan io_uring, yang membantu aplikasi melakukan I/O dengan cara yang lebih efisien, tanpa harus melakukan blocking pada thread atau proses utama. Hal ini sangat berguna untuk aplikasi yang memerlukan I/O dalam jumlah besar, seperti server atau aplikasi yang bekerja dengan data besar, di mana performa sangat penting.
-
-Dengan kata lain, io_uring ini memungkinkan operasi I/O yang lebih cepat dan lebih efisien di tingkat sistem operasi, dengan meminimalkan overhead yang terjadi akibat operasi I/O yang memblokir proses utama.
+File ini bertujuan untuk mengelola buffer untuk operasi I/O dalam io_uring, memungkinkan aplikasi melakukan I/O secara efisien tanpa blocking. File ini mendukung pendaftaran, pemilihan, dan penghapusan buffer, yang sangat berguna untuk aplikasi dengan kebutuhan I/O tinggi seperti server atau pengolahan data besar.
 
 ### memmap.c
-Kode yang diberikan adalah bagian dari implementasi **io\_uring** di kernel Linux, yang bertujuan untuk mengelola memori secara efisien dalam operasi I/O asinkron. Fungsi utama dari kode ini adalah untuk mengalokasikan dan memetakan memori, baik dari kernel maupun dari memori pengguna, ke dalam ruang alamat yang dapat diakses oleh sistem I/O. Halaman-halaman memori pengguna dapat "dipin" atau dipertahankan agar tidak dipindahkan oleh sistem, sementara memori lainnya dialokasikan secara dinamis. Selain itu, kode ini juga menangani pembebasan memori dan pemetaan untuk operasi `mmap`, yang memungkinkan aplikasi mengakses memori secara langsung melalui memori virtual. Semua ini bertujuan untuk meningkatkan efisiensi dalam proses I/O yang lebih cepat dan terisolasi antar konteks.
+File ini menangani pemetaan memori dalam io_uring, baik untuk alokasi memori kernel maupun pemetaan memori pengguna. Fungsi seperti io_uring_mmap dan io_create_region digunakan untuk memvalidasi dan mengelola region memori. File ini mendukung arsitektur dengan atau tanpa MMU, memastikan keamanan melalui validasi input dan sinkronisasi menggunakan mmap_lock.
 
 ### msg_ring.c
-Kode ini adalah bagian dari implementasi **io\_uring** di Linux, yang menangani komunikasi pesan antar konteks I/O secara asinkron. Fungsinya meliputi pengelolaan pengiriman data dan file descriptor antara konteks yang berbeda, baik secara lokal maupun remote. Dengan menggunakan struktur data `io_msg`, kode ini mengatur pesan, file sumber, dan berbagai flag serta command yang relevan. Sinkronisasi dilakukan dengan mutex dan spinlock untuk menghindari kondisi race, sedangkan verifikasi parameter dilakukan sebelum eksekusi. Fungsi seperti `io_msg_ring_data` dan `io_msg_send_fd` menangani pengiriman pesan, sementara pengelolaan file dilakukan melalui operasi `get_file` dan `fput`. Secara keseluruhan, kode ini mendukung pengiriman pesan efisien dalam lingkungan I/O asinkron dengan pemrosesan data dan file secara aman antar konteks.
-
+File ini mendukung pengiriman pesan efisien dalam lingkungan I/O asinkron dengan pemrosesan data dan file secara aman antar konteks. Fungsi io_msg_ring memungkinkan pengiriman data atau file descriptor dengan perintah seperti IORING_MSG_DATA. Validasi memastikan hanya operasi valid yang diproses, dan sinkronisasi menggunakan mutex serta spinlock menjaga konsistensi data.
 
 ### napi.c
 
@@ -106,18 +103,18 @@ file ini berisi mekanisme yang memungkinkan data dari jaringan diterima langsung
 Just declare the function specification. 
 
 ### advice.h
-io_madvise_prep and io_fadvise_prep are preparation functions that likely set up the necessary information for issuing a madvise or fadvise operation.
-
-io_madvise and io_fadvise are functions that actually issue the madvise or fadvise operation, likely handling the I/O with the appropriate flags and completing the task.
+File ini berisi fungsi untuk mendukung operasi madvise dan fadvise dalam konteks io_uring. Fungsi-fungsi ini memungkinkan pengelolaan memori dan pola akses file secara efisien dengan cara memberikan saran kepada kernel.
 
 ### alloc_cache.h
+
 
 ### cancel.h
 
 ### epoll.h
-
+File ini berisi fungsi-fungsi yang digunakan untuk mengelola (ctl) dan menunggu (wait) event pada file descriptor menggunakan mekanisme epoll. Fungsi-fungsi ini hanya akan tersedia jika konfigurasi CONFIG_EPOLL diaktifkan. 
 
 ### eventfd.h
+
 
 ### fdinfo.h
 
