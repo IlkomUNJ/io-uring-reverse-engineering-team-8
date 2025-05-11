@@ -15,7 +15,5 @@ Score is mainly calculated from individual contributions made to the commit. The
 
 ## Team Members
 - 1313623018 : Cintia Karomah Syabani
-
 - 1313623006 : Citra Ayu Ardhanareswari
-
-- Member C
+- 1313623058 : Naila Putri Fatihah
