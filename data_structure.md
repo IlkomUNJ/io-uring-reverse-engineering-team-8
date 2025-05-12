@@ -15,3 +15,12 @@ io_ev_fd       | io_uring/eventfd.c | eventfd_ctx, uint, uint, refcount_t, atomi
 
 If the following row value in a column is missing, assume the value is the same with the previous row in the same column. 
 Continue until all data structures documented properly.
+
+### advise
+io_fadvise     | io_uring/advise.c | file, u64, u64, u32 | io_fadvise_force_async | io_uring/advise.c | function parameter
+| | | | io_fadvise_prep | io_uring/advise.c | local variable, function parameter
+| | | | io_fadvise | io_uring/advise.c | local variable, function parameter
+| | | | ??? | io_uring/opdef.c | array??
+io_madvise     | io_uring/advise.c | file, u64, u64, u32 | io_madvise_prep | io_uring/advise.c | local variable, function parameter
+| | | | io_madvise | io_uring/advise.c | local variable, function parameter
+| | | | ??? | io_uring/opdef.c | array??
