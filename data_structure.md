@@ -84,50 +84,6 @@ io_ev_fd       | io_uring/eventfd.c | eventfd_ctx, uint, uint, refcount_t, atomi
 | | | | io_eventfd_flush_signal | io_uring/eventfd.c | local variable
 | | | | io_eventfd_register | io_uring/eventfd.c | local variable
 | | | | io_eventfd_unregister | io_uring/eventfd.c | local variable
-io_ring_ctx     | io_uring/eventfd.h | ??? | io_try_cancel | io_uring/cancel.c | local variable
-| | | | __io_async_cancel | io_uring/cancel.c | local variable
-| | | | __io_sync_cancel | io_uring/cancel.c | local variable
-| | | | io_sync_cancel | io_uring/cancel.c | function parameter
-| | | | io_cancel_remove_all | io_uring/cancel.c | function parameter
-| | | | io_cancel_remove | io_uring/cancel.c | function parameter
-| | | | io_sync_cancel | io_uring/cancel.h | function parameter
-| | | | io_cancel_remove_all | io_uring/cancel.h | function parameter
-| | | | io_cancel_remove | io_uring/cancel.h | function parameter
-| | | | io_eventfd_grab | io_uring/eventfd.c | function parameter
-| | | | io_eventfd_signal | io_uring/eventfd.c | function parameter
-| | | | io_eventfd_flush_signal | io_uring/eventfd.c | function parameter
-| | | | io_eventfd_register | io_uring/eventfd.c | function parameter
-| | | | io_eventfd_unregister | io_uring/eventfd.c | function parameter
-| | | | common_tracking_show_fdinfo | io_uring/fdinfo.c | function parameter
-| | | | napi_show_fdinfo | io_uring/fdinfo.c | function parameter 2
-| | | | io_uring_show_fdinfo | io_uring/fdinfo.c | local variable
-| | | | io_file_bitmap_get | io_uring/filetable.c | function parameter
-| | | | io_alloc_file_tables | io_uring/filetable.c | function parameter
-| | | | io_free_file_tables | io_uring/filetable.c | function parameter
-| | | | io_install_fixed_file | io_uring/filetable.c | function parameter
-| | | | __io_fixed_fd_install | io_uring/filetable.c | function parameter
-| | | | io_fixed_fd_install | io_uring/filetable.c | local variable
-| | | | io_fixed_fd_remove | io_uring/filetable.c | function parameter
-| | | | io_register_file_alloc_range | io_uring/filetable.c | function parameter
-| | | | io_alloc_file_tables | io_uring/filetable.h | function parameter
-| | | | io_free_file_tables | io_uring/filetable.h | function parameter
-| | | | __io_fixed_fd_install | io_uring/filetable.h | function parameter
-| | | | io_fixed_fd_remove | io_uring/filetable.h | function parameter
-| | | | io_register_file_alloc_range | io_uring/filetable.h | function parameter
-| | | | io_file_table_set_alloc_range | io_uring/filetable.h | function parameter
-| | | | io_futex_cache_init | io_uring/futex.c | function parameter
-| | | | io_futex_cache_free | io_uring/futex.c | function parameter
-| | | | io_futex_complete | io_uring/futex.c | local variable
-| | | | io_futex_cancel | io_uring/futex.c | function parameter
-| | | | io_futex_remove_all | io_uring/futex.c | function parameter
-| | | | io_futexv_wait | io_uring/futex.c | local variable
-| | | | io_futex_wait | io_uring/futex.c | local variable
-| | | | io_futex_remove_all | io_uring/futex.h | function parameter
-| | | | io_futex_cancel | io_uring/futex.h | function parameter
-| | | | io_futex_remove_all | io_uring/futex.h | function parameter 2
-| | | | io_futex_cache_init | io_uring/futex.h | function parameter 2
-| | | | io_futex_cache_free | io_uring/futex.h | function parameter 2
-<!-- BLOM KELAR BANYAK BANGEETTTTT -->
 
 ### fdinfo
 Structure name | Defined in | Attributes | Caller Functions Source | source caller | usage
