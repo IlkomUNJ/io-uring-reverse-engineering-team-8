@@ -131,6 +131,9 @@ io_futex_data       | io_uring/futex.c | futex_q, io_kiocb | io_futex_cache_init
 ### io_uring
 Structure name | Defined in | Attributes | Caller Functions Source | source caller | usage
 ---------------|------------|------------|-------------------------|---------------|-------------------
+io_defer_entry      | io_uring/io_uring.c | list_head, io_kiocb, u32 | io_queue_deferred | io_uring/oi_uring.c | local variable, function parameter
+| | | | io_drain_req | io_uring/io_uring.c | local variable
+| | | | __cold bool io_cancel_defer_files | io_uring/io_uring.c | local variable, function parameter
 
 ### io-wq
 Structure name | Defined in | Attributes | Caller Functions Source | source caller | usage
