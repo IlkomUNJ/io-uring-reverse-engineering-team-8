@@ -407,7 +407,7 @@ io_poll | io_uring/poll.h | struct file *file, struct wait_queue_head *head, __p
 | | | | __io_queue_proc | io_uring/poll.c | function parameter
 | | | | io_poll_queue_proc | io_uring/poll.c | local variable
 | | | | __io_arm_poll_handler | io_uring/poll.c | function parameter
-async_pollio_uring/poll.h | struct io_poll poll, struct io_poll *double_poll | io_req_alloc_apoll | io_uring/poll.c | return value, local variable
+async_poll | io_uring/poll.h | struct io_poll poll, struct io_poll *double_poll | io_req_alloc_apoll | io_uring/poll.c | return value, local variable
 | | | | io_arm_poll_handler | io_uring/poll.c | local variable
 
 ### refs
@@ -429,10 +429,34 @@ io_uring_region_desc | io_uring/register.c | size, user_addr, flags | io_create_
 ### rsrc
 Structure name | Defined in | Attributes | Caller Functions Source | source caller | usage
 ---------------|------------|------------|-------------------------|---------------|-------------------
+io_rsrc_node   | io_uring/rsrc.h | unsigned char type, int refs, u64 tag, union { file_ptr, *buf } | io_rsrc_node_alloc | io_uring/rsrc.c | return value
+| | | | io_free_rsrc_node | io_uring/rsrc.c | function parameter
+| | | | io_sqe_files_register | io_uring/rsrc.c | local variable
+| | | | io_sqe_buffers_register | io_uring/rsrc.c | local variable
+io_mapped_ubuf | io_uring/rsrc.h | u64 ubuf, uint len, uint nr_bvecs, uint folio_shift, refcount_t refs, ulong acct_pages, fn ptr release, void *priv, bool is_kbuf, u8 dir, bvec[] | io_sqe_buffer_register | io_uring/rsrc.c | local variable, structure attribute
+| | | | io_buffer_unmap | io_uring/rsrc.c | function parameter
+io_imu_folio_data | io_uring/rsrc.h | uint nr_pages_head, uint nr_pages_mid, uint folio_shift, uint nr_folios | io_check_coalesce_buffer | io_uring/rsrc.c | local variable, function parameter
+io_rsrc_update | io_uring/rsrc.c | struct file *file, u64 arg, u32 nr_args, u32 offset | io_files_update_prep | io_uring/rsrc.c | local variable
+| | | | io_files_update | io_uring/rsrc.c | local variable
+io_rsrc_data   | io_uring/rsrc.h | struct io_rsrc_node **nodes, unsigned int nr | io_rsrc_data_alloc | io_uring/rsrc.c | function parameter, return value
+| | | | io_rsrc_data_free | io_uring/rsrc.c | function parameter
+| | | | io_sqe_buffers_register | io_uring/rsrc.c | local variable
 
 ### rw
 Structure name | Defined in | Attributes | Caller Functions Source | source caller | usage
 ---------------|------------|------------|-------------------------|---------------|-------------------
+io_rw          | io_uring/rw.c | kiocb, addr, len, flags | __io_prep_rw | io_uring/rw.c | local variable, function parameter
+| | | | io_read_mshot_prep | io_uring/rw.c | local variable
+| | | | io_rw_import_reg_vec | io_uring/rw.c | local variable
+| | | | io_req_rw_complete | io_uring/rw.c | local variable
+| | | | io_rw_should_reissue | io_uring/rw.c | local variable
+io_async_rw    | io_uring/rw.h	iou_vec vec, size_t bytes_done, struct iov_iter iter, iov_iter_state iter_state, iovec fast_iov, wpq / meta / meta_state | io_rw_alloc_async | io_uring/rw.c | local variable, return value
+| | | | __io_import_rw_buffer | io_uring/rw.c | function parameter
+| | | | io_rw_recycle | io_uring/rw.c | local variable, function parameter
+| | | | io_meta_save_state | io_uring/rw.c | function parameter
+| | | | io_rw_should_retry | io_uring/rw.c | local variable, function parameter
+io_meta_state  | io_uring/rw.h | u32 seed, iov_iter_state iter_meta | io_meta_save_state | io_uring/rw.c | structure attribute
+| | | | io_meta_restore | io_uring/rw.c | structure attribute
 
 ### slist 
 Structure name | Defined in | Attributes | Caller Functions Source | source caller | usage
