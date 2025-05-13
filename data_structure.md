@@ -451,7 +451,7 @@ io_rw          | io_uring/rw.c | kiocb, addr, len, flags | __io_prep_rw | io_uri
 | | | | io_rw_import_reg_vec | io_uring/rw.c | local variable
 | | | | io_req_rw_complete | io_uring/rw.c | local variable
 | | | | io_rw_should_reissue | io_uring/rw.c | local variable
-io_async_rw    | io_uring/rw.h	iou_vec vec, size_t bytes_done, struct iov_iter iter, iov_iter_state iter_state, iovec fast_iov, wpq / meta / meta_state | io_rw_alloc_async | io_uring/rw.c | local variable, return value
+io_async_rw    | io_uring/rw.h | iou_vec vec, size_t bytes_done, struct iov_iter iter, iov_iter_state iter_state, iovec fast_iov, wpq / meta / meta_state | io_rw_alloc_async | io_uring/rw.c | local variable, return value
 | | | | __io_import_rw_buffer | io_uring/rw.c | function parameter
 | | | | io_rw_recycle | io_uring/rw.c | local variable, function parameter
 | | | | io_meta_save_state | io_uring/rw.c | function parameter
