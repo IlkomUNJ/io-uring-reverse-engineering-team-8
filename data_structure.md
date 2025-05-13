@@ -302,7 +302,90 @@ io_msg         | io_uring/msg_ring.c | file, file, callback_head, u64, u32, u32,
 | | | | io_msg_ring | io_uring/msg_ring.c | local variable, function 
 | | | | io_uring_sync_msg_ring | io_uring/msg_ring.c | local variable
 
-### napi - rw
+### napi
+Structure name | Defined in | Attributes | Caller Functions Source | source caller | usage
+---------------|------------|------------|-------------------------|---------------|-------------------
+io_napi_entry  | io_uring/napi.c | unsigned int, list_head, unsigned long, hlist_node, rcu_head | io_napi_hash_find | io_uring/napi.c | local variable, return value
+| | | | __io_napi_add_id | io_uring/napi.c | local variable
+| | | | __io_napi_del_id | io_uring/napi.c | local variable
+| | | | __io_napi_remove_stale | io_uring/napi.c | local variable
+| | | | static_tracking_do_busy_loop | io_uring/napi.c | local variable 
+| | | | dynamic_tracking_do_busy_loop | io_uring/napi.c | local variable
+| | | | io_napi_blocking_busy_loop | io_uring/napi.c | local variable
+| | | | io_napi_free | io_uring/napi.c | local variable
+
+### net
+Structure name | Defined in | Attributes | Caller Functions Source | source caller | usage
+---------------|------------|------------|-------------------------|---------------|-------------------
+io_shutdown	| io_uring/net.c | struct file *, int | io_shutdown_prep | io_uring/net.c | Local variable
+| | | | io_shutdown	| io_uring/net.c | Local variable
+io_accept   | io_uring/net.c | struct file *, struct sockaddr __user *, int __user *, int, int, u32, unsigned long | io_accept_prep | io_uring/net.c | Local variable
+| | | | io_accept | io_uring/net.c | Local variable
+io_socket   | io_uring/net.c | struct file *, int, int, int, int, u32, unsigned long | io_socket_prep | io_uring/net.c | Local variable
+| | | | io_socket	io_uring/net.c	Local variable
+io_connect  | io_uring/net.c | struct file *, struct sockaddr __user *, int, bool, bool | io_connect_prep | io_uring/net.c | Local variable
+| | | | io_connect | io_uring/net.c | Local variable
+io_bind     | io_uring/net.c | struct file *, int | io_bind_prep | io_uring/net.c | Local variable
+| | | | io_bind | io_uring/net.c | Local variable
+io_listen   | io_uring/net.c | struct file *, int | io_listen_prep | io_uring/net.c | Local variable
+| | | | io_listen | io_uring/net.c | Local variable
+io_sr_msg   | io_uring/net.c | struct file *, union { umsg_compat *, umsg *, buf * }, int, unsigned, unsigned, unsigned, u16, u16, bool, msg_control, notif	io_sendmsg_prep | io_uring/net.c | Local variable
+| | | | io_sendmsg | io_uring/net.c | Local variable
+| | | | io_recvmsg_prep | io_uring/net.c | Local variable
+| | | | io_recvmsg | io_uring/net.c | Local variable
+| | | | io_send | io_uring/net.c | Local variable
+| | | | io_recv	i | _uring/net.c | Local variable
+| | | | io_send_zc_prep | io_uring/net.c | Local variable
+| | | | io_send_zc | io_uring/net.c | Local variable
+| | | | io_sendmsg_zc | io_uring/net.c | Local variable
+io_recvzc   | io_uring/net.c | struct file *, unsigned, u16, u32, struct io_zcrx_ifq * | io_recvzc_prep | io_uring/net.c | Local variable
+| | | | io_recvzc | io_uring/net.c | Local variable
+io_recvmsg_multishot_hdr | io_uring/net.c | struct io_uring_recvmsg_out, struct sockaddr_storage | io_recvmsg_multishot | io_uring/net.c | Local variable
+io_async_msghdr | io_uring/net.h | iou_vec, int, iovec, controllen, payloadlen, sockaddr *, msghdr, sockaddr_storage | io_msg_alloc_async | io_uring/net.c | Return value
+| | | | io_send_setup | io_uring/net.c | Function parameter
+| | | | io_sendmsg_setup | io_uring/net.c | Function parameter
+| | | | io_recvmsg_prep_setup | io_uring/net.c | Function parameter
+| | | | io_send_zc_prep | io_uring/net.c | Local variable
+
+### nop
+Structure name | Defined in | Attributes | Caller Functions Source | source caller | usage
+---------------|------------|------------|-------------------------|---------------|-------------------
+
+### notif
+Structure name | Defined in | Attributes | Caller Functions Source | source caller | usage
+---------------|------------|------------|-------------------------|---------------|-------------------
+
+### opdef
+Structure name | Defined in | Attributes | Caller Functions Source | source caller | usage
+---------------|------------|------------|-------------------------|---------------|-------------------
+
+### openclose
+Structure name | Defined in | Attributes | Caller Functions Source | source caller | usage
+---------------|------------|------------|-------------------------|---------------|-------------------
+
+### poll
+Structure name | Defined in | Attributes | Caller Functions Source | source caller | usage
+---------------|------------|------------|-------------------------|---------------|-------------------
+
+### refs
+Structure name | Defined in | Attributes | Caller Functions Source | source caller | usage
+---------------|------------|------------|-------------------------|---------------|-------------------
+
+### register
+Structure name | Defined in | Attributes | Caller Functions Source | source caller | usage
+---------------|------------|------------|-------------------------|---------------|-------------------
+
+### rsrc
+Structure name | Defined in | Attributes | Caller Functions Source | source caller | usage
+---------------|------------|------------|-------------------------|---------------|-------------------
+
+### rw
+Structure name | Defined in | Attributes | Caller Functions Source | source caller | usage
+---------------|------------|------------|-------------------------|---------------|-------------------
+
+### slist 
+Structure name | Defined in | Attributes | Caller Functions Source | source caller | usage
+---------------|------------|------------|-------------------------|---------------|-------------------
 
 ### splice
 Structure name | Defined in | Attributes | Caller Functions Source | source caller | usage
