@@ -365,7 +365,6 @@ io_zcrx_area      | io_uring/zcrx.h| struct net_iov_area, struct io_zcrx_ifq, at
 | | | | io_zcrx_queue_cqe| io_uring/zcrx.c | local variable
 | | | | io_zcrx_alloc_fallback| io_uring/zcrx.c | function parameter
 | | | | io_zcrx_copy_chunk| io_uring/zcrx.c | local variable
-	spinlock_t			lock;
 io_zcrx_areaio_zcrx_ifq      | io_uring/zcrx.h| struct io_ring_ctx, struct io_zcrx_area, struct io_uring, struct io_uring_zcrx_rqe, u32, spinlock_t, struct device, struct net_device, netdevice_tracker, spinlock_t | __io_zcrx_unmap_area | io_uring/zcrx.c | function parameter
 | | | | io_zcrx_unmap_area| io_uring/zcrx.c | function parameter
 | | | | io_zcrx_map_area| io_uring/zcrx.c | function parameter
