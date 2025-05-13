@@ -135,6 +135,97 @@ Structure name | Defined in | Attributes | Caller Functions Source | source call
 ### io-wq
 Structure name | Defined in | Attributes | Caller Functions Source | source caller | usage
 ---------------|------------|------------|-------------------------|---------------|-------------------
+io_wq_hash      | io_uring/io-wq.h | refcount_t refs, unsigned long, struct wait_queue_head | io_wq_put_hash | io_uring/io-wq.h | function parameter
+| | | | io_wq_data| io_uring/io-wq.h | local variable
+| | | | io_wq| io_uring/io-wq.c | local variable
+io_wq_data      | io_uring/io-wq.h | rstruct io_wq_hash, struct task_struct, io_wq_work_fn, free_work_fn | io_wq_create | io_uring/io-wq.h | function parameter
+| | | | io_wq_create| io_uring/io-wq.h | local variable
+io_wq    | io_uring/io-wq.c | unsigned long state, free_work_fn, io_wq_work_fn, struct io_wq_hash, atomic_t worker, struct completion, struct hlist_node, struct task_struct, struct io_wq_acct, struct wait_queue_entry, struct io_wq_work, cpumask_var_t| io_worker | io_uring/io-wq.c | local function
+| | | | create_io_worker| io_uring/io-wq.c | function parameter
+| | | | io_acct_cancel_pending_work| io_uring/io-wq.c | function parameter
+| | | | io_wq_cancel_tw_create| io_uring/io-wq.c | function parameter
+| | | | io_get_acct| io_uring/io-wq.c | function parameter
+| | | | io_work_get_acct| io_uring/io-wq.c | function parameter
+| | | | io_worker_ref_put| io_uring/io-wq.c | function parameter
+| | | | io_worker_cancel_cb| io_uring/io-wq.c | local variable
+| | | | io_worker_exit| io_uring/io-wq.c | local variable
+| | | | io_wq_create_worker| io_uring/io-wq.c | function parameter
+| | | | create_worker_cb| io_uring/io-wq.c | local variable
+| | | | io_queue_worker_create| io_uring/io-wq.c | local variable
+| | | | io_wq_dec_running| io_uring/io-wq.c | local variable
+| | | | io_wait_on_hash| io_uring/io-wq.c | function parameter
+| | | | io_get_next_work| io_uring/io-wq.c | function parameter
+| | | | wq_list_for_each| io_uring/io-wq.c | function parameter
+| | | | io_worker_handle_work| io_uring/io-wq.c | local variable
+| | | | io_wq_worker| io_uring/io-wq.c | local variable
+| | | | io_init_new_worker| io_uring/io-wq.c | function parameter
+| | | | create_worker_cont| io_uring/io-wq.c | local variable
+| | | | io_wq_for_each_worker| io_uring/io-wq.c | function parameter
+| | | | io_run_cancel| io_uring/io-wq.c | function parameter
+| | | | io_wq_insert_work| io_uring/io-wq.c | function parameter
+| | | | io_wq_enqueue| io_uring/io-wq.c | function parameter
+| | | | io_wq_remove_pending| io_uring/io-wq.c | function parameter
+| | | | io_acct_cancel_pending_work| io_uring/io-wq.c | function parameter
+| | | | io_wq_cancel_pending_work| io_uring/io-wq.c | function parameter
+| | | | io_wq_cancel_running_work| io_uring/io-wq.c | function parameter
+| | | | io_wq_cancel_cb| io_uring/io-wq.c | function parameter
+| | | | io_wq_hash_wake| io_uring/io-wq.c | function parameter, local variable
+| | | | io_wq_create| io_uring/io-wq.c | local variable
+| | | | io_wq_exit_start| io_uring/io-wq.c | function parameter
+| | | | io_wq_cancel_tw_create| io_uring/io-wq.c | function parameter
+| | | | io_wq_exit_workers| io_uring/io-wq.c | function parameter
+| | | | io_wq_destroy| io_uring/io-wq.c | function parameter
+| | | | io_wq_put_and_exit| io_uring/io-wq.c | function parameter
+| | | | __io_wq_cpu_online| io_uring/io-wq.c | function parameter
+| | | | io_wq_cpu_online| io_uring/io-wq.c | function parameter
+| | | | io_wq_cpu_offline| io_uring/io-wq.c | function parameter
+| | | | io_wq_max_workers| io_uring/io-wq.c | function parameter
+io_cb_cancel_data      | io_uring/io-wq.c| rwork_cancel_fn, void, int nr_running, int nr_pending, bool cancel_all  | io_acct_cancel_pending_work | io_uring/io-wq.c | function parameter
+| | | | create_worker_cont| io_uring/io-wq.c | local variable
+| | | | io_wq_enqueue| io_uring/io-wq.c | local variable
+| | | | __io_wq_worker_cancel| io_uring/io-wq.c | function parameter
+| | | | io_wq_worker_cancel| io_uring/io-wq.c | local variable
+| | | | io_acct_cancel_pending_work| io_uring/io-wq.c | function parameter
+| | | | io_wq_cancel_pending_work| io_uring/io-wq.c | function parameter
+| | | | io_acct_cancel_running_work| io_uring/io-wq.c | function parameter
+| | | | io_wq_cancel_running_work| io_uring/io-wq.c | function parameter
+| | | | io_wq_cancel_cb| io_uring/io-wq.c | function parameter
+| | | | io_wq_cancel_cb| io_uring/io-wq.c | local variable
+| | | | io_wq_destroy| io_uring/io-wq.c | local variable
+io_worker      | io_uring/io-wq.c| refcount_t, unsigned long flags, struct hlist_nulls_node nulls_node, struct list_head all_list, struct task_struct , struct io_wq, struct io_wq_acct , struct io_wq_work, raw_spinlock_t , struct completion, unsigned long create_state,struct callback_head create_work, int init_retries, union | io_wq_dec_running | io_uring/io-wq.c | function parameter
+| | | | io_worker_get| io_uring/io-wq.c | function parameter
+| | | | io_worker_release| io_uring/io-wq.c | function parameter
+| | | | io_wq_get_acct| io_uring/io-wq.c | function parameter
+| | | | io_wq_worker_stopped| io_uring/io-wq.c | local parameter
+| | | | io_worker_cancel_cb| io_uring/io-wq.c | function parameter
+| | | | io_task_worker_match| io_uring/io-wq.c | local variable, function parameter
+| | | | io_worker_exit| io_uring/io-wq.c | function parameter
+| | | | io_acct_activate_free_worker| io_uring/io-wq.c | local parameter
+| | | | io_wq_inc_running| io_uring/io-wq.c | function parameter
+| | | | create_worker_cb| io_uring/io-wq.c | local parametr
+| | | | io_queue_worker_create | io_uring/io-wq.c | function parameter
+| | | | io_wq_dec_running| io_uring/io-wq.c | function parameter
+| | | | __io_worker_busy| io_uring/io-wq.c | function parameter
+| | | | __io_worker_idle| io_uring/io-wq.c | function parameter
+| | | | io_assign_current_work| io_uring/io-wq.c | function parameter
+| | | | io_worker_handle_work| io_uring/io-wq.c | function parameter
+| | | | io_wq_worker| io_uring/io-wq.c | local variable
+| | | | io_wq_worker_running| io_uring/io-wq.c | local varoiable
+| | | | io_wq_worker_sleeping| io_uring/io-wq.c | local variable
+| | | | io_init_new_worker| io_uring/io-wq.c | function parameter
+| | | | io_should_retry_thread| io_uring/io-wq.c | function parameter
+| | | | queue_create_worker_retry| io_uring/io-wq.c | function parameter
+| | | | create_worker_cont| io_uring/io-wq.c | local variable, function parameter
+| | | | io_workqueue_create| io_uring/io-wq.c | function parameter, local variable
+| | | | create_io_worker| io_uring/io-wq.c | local variable
+| | | | io_acct_for_each_worker| io_uring/io-wq.c | local variable, function paraetr
+| | | | io_wq_for_each_worker| io_uring/io-wq.c | function parameter
+| | | | io_wq_worker_wake| io_uring/io-wq.c | function parameter
+| | | | __io_wq_worker_cancel| io_uring/io-wq.c | function parameter
+| | | | io_wq_worker_cancel| io_uring/io-wq.c | function parameter
+| | | | io_task_work_match| io_uring/io-wq.c | local variable
+| | | | io_wq_cancel_tw_create| io_uring/io-wq.c | function parameter
+| | | | io_wq_worker_affinity| io_uring/io-wq.c | function parameter
 
 ### kbuf
 Structure name | Defined in | Attributes | Caller Functions Source | source caller | usage
