@@ -350,22 +350,65 @@ io_async_msghdr | io_uring/net.h | iou_vec, int, iovec, controllen, payloadlen, 
 ### nop
 Structure name | Defined in | Attributes | Caller Functions Source | source caller | usage
 ---------------|------------|------------|-------------------------|---------------|-------------------
+io_nop         | io_uring/nop.c | struct file *, int result, int fd, unsigned int flags | io_nop_prep | io_uring/nop.c | Local variable
+| | | | io_nop | io_uring/nop.c | Local variable
 
 ### notif
 Structure name | Defined in | Attributes | Caller Functions Source | source caller | usage
 ---------------|------------|------------|-------------------------|---------------|-------------------
+io_notif_data  | io_uring/notif.h | struct file*, struct ubuf_info, io_notif_data* next, head; unsigned account_pages; bool zc_report, zc_used, zc_copied | io_notif_tw_complete | io_uring/notif.c | Local variable
+| | | | io_tx_ubuf_complete | io_uring/notif.c | Local variable
+| | | | io_link_skb | io_uring/notif.c | Local variable
+| | | | io_alloc_notif | io_uring/notif.c | Local variable
+| | | | io_notif_flush | io_uring/notif.h | Local variable
+| | | | io_notif_account_mem | io_uring/notif.h | Local variable
+| | | | io_tx_ubuf_complete | io_uring/notif.c | Function parameter
+| | | | io_link_skb | io_uring/notif.c | Function parameter
+| | | | io_notif_account_mem | io_uring/notif.h | Function parameter
+| | | | io_notif_flush | io_uring/notif.h | Function parameter
+| | | | io_notif_to_data | io_uring/notif.h | Return value
 
 ### opdef
 Structure name | Defined in | Attributes | Caller Functions Source | source caller | usage
 ---------------|------------|------------|-------------------------|---------------|-------------------
+io_issue_def   | io_uring/opdef.h | bitfields (needs_file, plug, ioprio, ..., vectored), unsigned short async_size, function pointers issue, prep | io_uring_op_supported | io_uring/opdef.c | Function parameter
+| | | | io_uring_optable_init | io_uring/opdef.c | Local variable
+io_cold_def | io_uring/opdef.h | const char *name, function pointers cleanup, fail	io_uring_get_opcode | io_uring/opdef.c | Return value
+| | | | io_uring_optable_init | io_uring/opdef.c | Local variable
 
 ### openclose
 Structure name | Defined in | Attributes | Caller Functions Source | source caller | usage
 ---------------|------------|------------|-------------------------|---------------|-------------------
+io_open | io_uring/openclose.c | file*, int dfd, u32 file_slot, struct filename*, struct open_how, unsigned long nofile | io_openat_prep | io_uring/openclose.c | Local variable
+| | | | io_openat2_prep | io_uring/openclose.c | Local variable
+| | | | io_openat2 | io_uring/openclose.c | Local variable
+| | | | io_open_cleanup | io_uring/openclose.c | Local variable
+io_close | io_uring/openclose.c | file*, int fd, u32 file_slot | io_close_prep | io_uring/openclose.c | Local variable
+| | | | io_close | io_uring/openclose.c | Local variable
+| | | | io_close_fixed | io_uring/openclose.c | Local variable
+io_fixed_install | io_uring/openclose.c | file*, unsigned int o_flags | io_install_fixed_fd_prep | io_uring/openclose.c | Local variable
+| | | | io_install_fixed_fd | io_uring/openclose.c | Local variable
 
 ### poll
 Structure name | Defined in | Attributes | Caller Functions Source | source caller | usage
 ---------------|------------|------------|-------------------------|---------------|-------------------
+io_poll_update | io_uring/poll.c | struct file *file, u64 old_user_data, u64 new_user_data, __poll_t events, bool update_events, bool update_user_data | io_poll_remove_prep | io_uring/poll.c | local variable
+| | | | io_poll_remove | io_uring/poll.c | local variable
+io_poll_table | io_uring/poll.c | struct poll_table_struct pt, struct io_kiocb *req, int nr_entries, int error, bool owning, __poll_t result_mask | io_poll_queue_proc | io_uring/poll.c | local variable
+| | | | io_async_queue_proc | io_uring/poll.c | local variable
+| | | | io_poll_can_finish_inline | io_uring/poll.c | function parameter
+| | | | __io_arm_poll_handler | io_uring/poll.c | local variable
+io_poll | io_uring/poll.h | struct file *file, struct wait_queue_head *head, __poll_t events, int retries, struct wait_queue_entry wait | io_init_poll_iocb | io_uring/poll.c | function parameter
+| | | | io_poll_remove_entry | io_uring/poll.c | function parameter
+| | | | io_poll_get_single | io_uring/poll.c | return value
+| | | | io_poll_get_double | io_uring/poll.c | return value
+| | | | io_pollfree_wake | io_uring/poll.c | function parameter
+| | | | io_poll_wake | io_uring/poll.c | local variable
+| | | | __io_queue_proc | io_uring/poll.c | function parameter
+| | | | io_poll_queue_proc | io_uring/poll.c | local variable
+| | | | __io_arm_poll_handler | io_uring/poll.c | function parameter
+async_pollio_uring/poll.h | struct io_poll poll, struct io_poll *double_poll | io_req_alloc_apoll | io_uring/poll.c | return value, local variable
+| | | | io_arm_poll_handler | io_uring/poll.c | local variable
 
 ### refs
 Structure name | Defined in | Attributes | Caller Functions Source | source caller | usage
@@ -374,6 +417,14 @@ Structure name | Defined in | Attributes | Caller Functions Source | source call
 ### register
 Structure name | Defined in | Attributes | Caller Functions Source | source caller | usage
 ---------------|------------|------------|-------------------------|---------------|-------------------
+io_uring_probe | io_uring/register.c | last_op, ops_len, ops[] | io_probe | io_uring/register.c | local variable, function parameter 
+io_restriction | io_uring/register.c | register_op, sqe_op, sqe_flags_allowed, sqe_flags_required, registered | io_parse_restrictions | io_uring/register.c | function parameter 
+| | | | io_register_restrictions | io_uring/register.c | local variable 
+io_ring_ctx_rings | io_uring/register.c | rings, sq_sqes, sq_region, ring_region | io_register_free_rings | io_uring/register.c | function parameter 
+| | | | io_register_resize_rings | io_uring/register.c | local variable 
+io_uring_region_desc | io_uring/register.c | size, user_addr, flags | io_create_region_mmap_safe | io_uring/register.c | function parameter 
+| | | | io_register_mem_region | io_uring/register.c | local variable 
+
 
 ### rsrc
 Structure name | Defined in | Attributes | Caller Functions Source | source caller | usage
