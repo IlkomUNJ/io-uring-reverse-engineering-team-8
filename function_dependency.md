@@ -1037,8 +1037,6 @@ msg_ring.c | io_uring/alloc_cache.h | io_alloc_cache_put | 1 |
 | | include/linux/io_uring.h | io_is_uring_fops | 2 |
 | | fs/file_table.c | fput | 1 |
 | | include/linux/spinlock.h | spin_trylock | 2 |
-
-### napi - rw
 napi.h | linux/linux/net/socket.c | sock_from_file | 3 |
 | | io_uring/napi.h | io_napi | 3 |
 | | include/asm-generic/rwonce.h | READ_ONCE | 6 |
@@ -1751,11 +1749,7 @@ rw.c | include/linux/hrtimer.h | hrtimer_set_expires | 3 |
 | | io_uring/rw.c | need_complete_io | 6 |
 | | io_uring/rw.c | io_kiocb_start_write | 3 |
 | | drivers/nvme/host/core.c | uring_cmd_iopoll | 3 |
-
-### splice
-| Source | Library | Function Utilized | Times Used |
-|--------|---------|-------------------|------------|
-| splice.c | include/asm-generic/rwonce.h | READ_ONCE | 6 |
+splice.c | include/asm-generic/rwonce.h | READ_ONCE | 6 |
 | | io_uring/filetable.h | io_slot_file | 1 |
 | | io_uring/io_uring.h | io_ring_submit_lock | 1 |
 | | fs/file_table.c | fput | 2 |
@@ -1772,14 +1766,7 @@ rw.c | include/linux/hrtimer.h | hrtimer_set_expires | 3 |
 | | io_uring/io_uring.h | io_req_set_res | 2 |
 | | include/linux/compiler.h | unlikely | 1 |
 | | include/asm-generic/bug.h | WARN_ON_ONCE | 2 |
-
-| Source | Library | Function Utilized | Times Used |
-|--------|---------|-------------------|------------|
-
-### sqpoll
-| Source | Library | Function Utilized | Times Used |
-|--------|---------|-------------------|------------|
-| sqpoll.c | include/linux/atomic/atomic-instrumented.h | atomic_inc | 1 |
+sqpoll.c | include/linux/atomic/atomic-instrumented.h | atomic_inc | 1 |
 | | io_uring/io_uring.c | io_uring_cancel_generic | 1 |
 | | include/linux/security.h | security_uring_sqpoll | 1 |
 | | include/linux/audit.h | audit_uring_exit | 1 |
@@ -1889,14 +1876,7 @@ rw.c | include/linux/hrtimer.h | hrtimer_set_expires | 3 |
 | | include/linux/sched/task.h | put_task_struct | 2 |
 | | include/linux/atomic/atomic-instrumented.h | atomic_dec_return | 1 |
 | | drivers/i2c/busses/i2c-pca-isa.c | wait_for_completion | 1 |
-
-| Source | Library | Function Utilized | Times Used |
-|--------|---------|-------------------|------------|
-
-### statx
-| Source | Library | Function Utilized | Times Used |
-|--------|---------|-------------------|------------|
-| statx.c | io_uring/io_uring.h | io_req_set_res | 1 |
+statx.c | io_uring/io_uring.h | io_req_set_res | 1 |
 | | crypto/asymmetric_keys/x509_parser.h | IS_ERR | 1 |
 | | include/asm-generic/bug.h | WARN_ON_ONCE | 1 |
 | | fs/namei.c | putname | 1 |
@@ -1906,14 +1886,7 @@ rw.c | include/linux/hrtimer.h | hrtimer_set_expires | 3 |
 | | fs/namei.c | getname_uflags | 1 |
 | | include/linux/err.h | PTR_ERR | 1 |
 | | include/linux/io_uring_types.h | io_kiocb_to_cmd | 3 |
-
-| Source | Library | Function Utilized | Times Used |
-|--------|---------|-------------------|------------|
-
-### sync
-| Source | Library | Function Utilized | Times Used |
-|--------|---------|-------------------|------------|
-| sync.c | include/linux/compiler.h | unlikely | 3 |
+sync.c | include/linux/compiler.h | unlikely | 3 |
 | | include/asm-generic/rwonce.h | READ_ONCE | 9 |
 | | fs/sync.c | sync_file_range | 1 |
 | | include/linux/io_uring_types.h | io_kiocb_to_cmd | 6 |
@@ -1922,15 +1895,9 @@ rw.c | include/linux/hrtimer.h | hrtimer_set_expires | 3 |
 | | include/asm-generic/bug.h | WARN_ON_ONCE | 3 |
 | | io_uring/io_uring.h | io_req_set_res | 3 |
 | | fs/open.c | vfs_fallocate | 1 |
-
-| Source | Library | Function Utilized | Times Used |
-|--------|---------|-------------------|------------|
-
-
-### tctx
-| Source | Library | Function Utilized | Times Used |
-|--------|---------|-------------------|------------|
-| tctx.c | include/linux/io_uring.h | io_is_uring_fops | 1 |
+tctx.h | include/linux/compiler.h | likely | 1 |
+| | io_uring/tctx.c | __io_uring_add_tctx_node_from_submit | 1 |
+tctx.c | include/linux/io_uring.h | io_is_uring_fops | 1 |
 | | io_uring/io-wq.c | io_wq_put_and_exit | 1 |
 | | lib/xarray.c | xa_load | 1 |
 | | include/linux/uaccess.h | copy_to_user | 1 |
@@ -1974,16 +1941,8 @@ rw.c | include/linux/hrtimer.h | hrtimer_set_expires | 3 |
 | | io_uring/tctx.c | io_uring_alloc_task_context | 1 |
 | | include/linux/slab.h | kzalloc | 2 |
 | | include/linux/task_work.h | init_task_work | 1 |
-
-| Source | Library | Function Utilized | Times Used |
-|--------|---------|-------------------|------------|
-| tctx.h | include/linux/compiler.h | likely | 1 |
-| | io_uring/tctx.c | __io_uring_add_tctx_node_from_submit | 1 |
-
-### timeout
-| Source | Library | Function Utilized | Times Used |
-|--------|---------|-------------------|------------|
-| timeout.c | include/asm-generic/bug.h | WARN_ON_ONCE | 2 |
+timeout.h | io_uring/timeout.c | __io_disarm_linked_timeout | 1 |
+timeout.c | include/asm-generic/bug.h | WARN_ON_ONCE | 2 |
 | | drivers/block/aoe/aoenet.c | __must_hold | 10 |
 | | io_uring/io_uring.h | io_should_terminate_tw | 1 |
 | | drivers/gpu/drm/radeon/mkregtable.c | list_for_each_entry | 2 |
@@ -2057,27 +2016,12 @@ rw.c | include/linux/hrtimer.h | hrtimer_set_expires | 3 |
 | | io_uring/io_uring.h | io_req_queue_tw_complete | 3 |
 | | drivers/gpu/drm/radeon/mkregtable.c | list_add_tail | 2 |
 | | io_uring/timeout.c | __io_timeout_prep | 2 |
-
-| Source | Library | Function Utilized | Times Used |
-|--------|---------|-------------------|------------|
-| timeout.h | io_uring/timeout.c | __io_disarm_linked_timeout | 1 |
-
-### truncate
-| Source | Library | Function Utilized | Times Used |
-|--------|---------|-------------------|------------|
-| truncate.c | io_uring/io_uring.h | io_req_set_res | 1 |
+truncate.c | io_uring/io_uring.h | io_req_set_res | 1 |
 | | include/linux/io_uring_types.h | io_kiocb_to_cmd | 2 |
 | | include/asm-generic/rwonce.h | READ_ONCE | 1 |
 | | include/asm-generic/bug.h | WARN_ON_ONCE | 1 |
 | | fs/open.c | do_ftruncate | 1 |
-
-| Source | Library | Function Utilized | Times Used |
-|--------|---------|-------------------|------------|
-
-### uring_cmd
-| Source | Library | Function Utilized | Times Used |
-|--------|---------|-------------------|------------|
-| uring_cmd.c | io_uring/rsrc.c | io_prep_reg_iovec | 1 |
+uring_cmd.c | io_uring/rsrc.c | io_prep_reg_iovec | 1 |
 | | include/linux/sockptr.h | USER_SOCKPTR | 2 |
 | | arch/x86/include/asm/kvm-x86-ops.h | BUILD_BUG_ON | 1 |
 | | io_uring/rsrc.h | io_alloc_cache_vec_kasan | 1 |
@@ -2124,14 +2068,7 @@ rw.c | include/linux/hrtimer.h | hrtimer_set_expires | 3 |
 | | include/linux/list.h | hlist_del | 1 |
 | | arch/alpha/kernel/rtc.c | ioctl | 2 |
 | | include/linux/io_uring/cmd.h | task_work_cb | 1 |
-
-| Source | Library | Function Utilized | Times Used |
-|--------|---------|-------------------|------------|
-
-### waitid
-| Source | Library | Function Utilized | Times Used |
-|--------|---------|-------------------|------------|
-| waitid.c | include/linux/bits.h | GENMASK | 1 |
+waitid.c | include/linux/bits.h | GENMASK | 1 |
 | | io_uring/cancel.c | io_cancel_remove | 1 |
 | | include/linux/spinlock.h | spin_unlock_irq | 1 |
 | | arch/powerpc/include/asm/uaccess.h | user_write_access_begin | 2 |
@@ -2179,14 +2116,7 @@ rw.c | include/linux/hrtimer.h | hrtimer_set_expires | 3 |
 | | include/asm-generic/rwonce.h | READ_ONCE | 4 |
 | | io_uring/io_uring.c | io_req_task_complete | 1 |
 | | io_uring/waitid.c | io_waitid_complete | 2 |
-
-| Source | Library | Function Utilized | Times Used |
-|--------|---------|-------------------|------------|
-
-### xattr
-| Source | Library | Function Utilized | Times Used |
-|--------|---------|-------------------|------------|
-| xattr.c | fs/xattr.c | import_xattr_name | 1 |
+xattr.c | fs/xattr.c | import_xattr_name | 1 |
 | | fs/namei.c | putname | 1 |
 | | include/linux/slab.h | kmalloc | 2 |
 | | include/asm-generic/bug.h | WARN_ON_ONCE | 4 |
@@ -2209,14 +2139,7 @@ rw.c | include/linux/hrtimer.h | hrtimer_set_expires | 3 |
 | | crypto/asymmetric_keys/x509_parser.h | IS_ERR | 2 |
 | | io_uring/io_uring.h | io_req_set_res | 1 |
 | | fs/xattr.c | file_getxattr | 1 |
-
-| Source | Library | Function Utilized | Times Used |
-|--------|---------|-------------------|------------|
-
-### zcrx
-| Source | Library | Function Utilized | Times Used |
-|--------|---------|-------------------|------------|
-| zcrx.c | drivers/gpu/drm/radeon/mkregtable.c | offsetof | 2 |
+zcrx.c | drivers/gpu/drm/radeon/mkregtable.c | offsetof | 2 |
 | | include/linux/uaccess.h | copy_from_user | 3 |
 | | io_uring/zcrx.c | io_zcrx_scrub | 1 |
 | | include/net/rps.h | sock_rps_record_flow | 1 |
@@ -2336,7 +2259,3 @@ rw.c | include/linux/hrtimer.h | hrtimer_set_expires | 3 |
 | | include/net/page_pool/helpers.h | page_pool_fragment_netmem | 1 |
 | | net/ipv4/tcp.c | tcp_read_sock | 1 |
 | | io_uring/io_uring.h | io_defer_get_uncommited_cqe | 1 |
-
-| Source | Library | Function Utilized | Times Used |
-|--------|---------|-------------------|------------|
-

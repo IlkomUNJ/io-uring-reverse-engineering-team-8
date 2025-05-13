@@ -25,14 +25,10 @@ io_fadvise     | io_uring/advise.c | file, u64, u64, u32 | io_fadvise_force_asyn
 io_madvise     | io_uring/advise.c | file, u64, u64, u32 | io_madvise_prep | io_uring/advise.c | local variable, function parameter
 | | | | io_madvise | io_uring/advise.c | local variable, function parameter
 
-### alloc_cache
-Structure name | Defined in | Attributes | Caller Functions Source | source caller | usage
----------------|------------|------------|-------------------------|---------------|-------------------
-
 ### cancel
 Structure name | Defined in | Attributes | Caller Functions Source | source caller | usage
 ---------------|------------|------------|-------------------------|---------------|-------------------
-io_cancel     | io_uring/cancel.c | file, u64, u32, s32, u8 | io_async_cancel_prep | io_uring/cancel.c | local variabel, function parameter
+io_cancel      | io_uring/cancel.c | file, u64, u32, s32, u8 | io_async_cancel_prep | io_uring/cancel.c | local variabel, function parameter
 | | | | io_async_cancel | io_uring/cancel.c | local variable, function parameter
 io_cancel_data | io_uring/cancel.h | io_ring_ctx, union, u64, file, u8, u32, int | io_try_cancel | io_uring/cancel.h | function parameter
 | | | | io_cancel_req_match | io_uring/cancel.h | function parameter
@@ -85,14 +81,6 @@ io_ev_fd       | io_uring/eventfd.c | eventfd_ctx, uint, uint, refcount_t, atomi
 | | | | io_eventfd_register | io_uring/eventfd.c | local variable
 | | | | io_eventfd_unregister | io_uring/eventfd.c | local variable
 
-### fdinfo
-Structure name | Defined in | Attributes | Caller Functions Source | source caller | usage
----------------|------------|------------|-------------------------|---------------|-------------------
-
-### filetable
-Structure name | Defined in | Attributes | Caller Functions Source | source caller | usage
----------------|------------|------------|-------------------------|---------------|-------------------
-
 ### fs
 Structure name | Defined in | Attributes | Caller Functions Source | source caller | usage
 ---------------|------------|------------|-------------------------|---------------|-------------------
@@ -131,19 +119,41 @@ io_futex_data       | io_uring/futex.c | futex_q, io_kiocb | io_futex_cache_init
 ### io_uring
 Structure name | Defined in | Attributes | Caller Functions Source | source caller | usage
 ---------------|------------|------------|-------------------------|---------------|-------------------
-io_defer_entry      | io_uring/io_uring.c | list_head, io_kiocb, u32 | io_queue_deferred | io_uring/oi_uring.c | local variable, function parameter
+io_defer_entry | io_uring/io_uring.c | list_head, io_kiocb, u32 | io_queue_deferred | io_uring/oi_uring.c | local variable, function parameter
 | | | | io_drain_req | io_uring/io_uring.c | local variable
-| | | | __cold bool io_cancel_defer_files | io_uring/io_uring.c | local variable, function parameter
+| | | | io_cancel_defer_files | io_uring/io_uring.c | local variable, function parameter
+ext_arg        | io_uring/io_uring.c | size_t, timespec64, sigset_t, ktime_t, bool, bool |  __io_cqring_wait_schedule | io_uring/oi_uring.c | function parameter
+| | | | io_cqring_wait_schedule | io_uring/io_uring.c | function parameter
+| | | | io_cqring_wait | io_uring/io_uring.c | function parameter
+| | | | io_get_ext_arg | io_uring/io_uring.c | function parameter
+| | | | SYSCALL_DEFINE6 | io_uring/io_uring.c | local variable
+io_tctx_exit   | io_uring/io_uring.c | callback_head, completion, io_ring_ctx |  io_tctx_exit_cb | io_uring/oi_uring.c | local variable, function parameter
+| | | | io_ring_exit_work | io_uring/io_uring.c | local variable
+io_task_cancel | io_uring/io_uring.c | io_uring_task, bool | io_cancel_task_cb | io_uring/io_uring.c | local variable 
+| | | | io_uring_try_cancel_requests | io_uring/io_uring.c | local variable 
+io_wait_queue  | io_uring/io_uring.h | wait_queue_entry, io_ring_ctx,  unsigned, unsigned, unsigned, int, ktime_t, ktime_t, hrtimer | io_should_wake | io_uring/io_uring.h | function parameter
+| | | | io_wake_function | io_uring/io_uring.c | local variable, function parameter
+| | | | io_cqring_timer_wakeup | io_uring/io_uring.c | local variable, function parameter
+| | | | io_cqring_min_timer_wakeup | io_uring/io_uring.c | local variable, function parameter
+| | | | io_cqring_schedule_timeout | io_uring/io_uring.c | function parameter
+| | | | __io_cqring_wait_schedule | io_uring/io_uring.c | function parameter
+| | | | io_cqring_wait_schedule | io_uring/io_uring.c | function parameter
+| | | | io_cqring_wait | io_uring/io_uring.c | local variable
+| | | | io_napi_busy_loop_should_end | io_uring/napi.c | local variable 
+| | | | io_napi_blocking_busy_loop | io_uring/napi.c | function parameter
+| | | | __io_napi_busy_loop | io_uring/napi.c | function parameter
+| | | | __io_napi_busy_loop | io_uring/napi.h | function parameter
+| | | | io_napi_busy_loop | io_uring/napi.h | function parameter
 
 ### io-wq
 Structure name | Defined in | Attributes | Caller Functions Source | source caller | usage
 ---------------|------------|------------|-------------------------|---------------|-------------------
-io_wq_hash      | io_uring/io-wq.h | refcount_t refs, unsigned long, struct wait_queue_head | io_wq_put_hash | io_uring/io-wq.h | function parameter
+io_wq_hash     | io_uring/io-wq.h | refcount_t refs, unsigned long, struct wait_queue_head | io_wq_put_hash | io_uring/io-wq.h | function parameter
 | | | | io_wq_data| io_uring/io-wq.h | local variable
 | | | | io_wq| io_uring/io-wq.c | local variable
-io_wq_data      | io_uring/io-wq.h | rstruct io_wq_hash, struct task_struct, io_wq_work_fn, free_work_fn | io_wq_create | io_uring/io-wq.h | function parameter
+io_wq_data     | io_uring/io-wq.h | rstruct io_wq_hash, struct task_struct, io_wq_work_fn, free_work_fn | io_wq_create | io_uring/io-wq.h | function parameter
 | | | | io_wq_create| io_uring/io-wq.h | local variable
-io_wq    | io_uring/io-wq.c | unsigned long state, free_work_fn, io_wq_work_fn, struct io_wq_hash, atomic_t worker, struct completion, struct hlist_node, struct task_struct, struct io_wq_acct, struct wait_queue_entry, struct io_wq_work, cpumask_var_t| io_worker | io_uring/io-wq.c | local function
+io_wq          | io_uring/io-wq.c | unsigned long state, free_work_fn, io_wq_work_fn, struct io_wq_hash, atomic_t worker, struct completion, struct hlist_node, struct task_struct, struct io_wq_acct, struct wait_queue_entry, struct io_wq_work, cpumask_var_t| io_worker | io_uring/io-wq.c | local function
 | | | | create_io_worker| io_uring/io-wq.c | function parameter
 | | | | io_acct_cancel_pending_work| io_uring/io-wq.c | function parameter
 | | | | io_wq_cancel_tw_create| io_uring/io-wq.c | function parameter
@@ -183,7 +193,7 @@ io_wq    | io_uring/io-wq.c | unsigned long state, free_work_fn, io_wq_work_fn, 
 | | | | io_wq_cpu_online| io_uring/io-wq.c | function parameter
 | | | | io_wq_cpu_offline| io_uring/io-wq.c | function parameter
 | | | | io_wq_max_workers| io_uring/io-wq.c | function parameter
-io_cb_cancel_data      | io_uring/io-wq.c| rwork_cancel_fn, void, int nr_running, int nr_pending, bool cancel_all  | io_acct_cancel_pending_work | io_uring/io-wq.c | function parameter
+io_cb_cancel_data | io_uring/io-wq.c| rwork_cancel_fn, void, int nr_running, int nr_pending, bool cancel_all | io_acct_cancel_pending_work | io_uring/io-wq.c | function parameter
 | | | | create_worker_cont| io_uring/io-wq.c | local variable
 | | | | io_wq_enqueue| io_uring/io-wq.c | local variable
 | | | | __io_wq_worker_cancel| io_uring/io-wq.c | function parameter
@@ -233,12 +243,12 @@ io_worker      | io_uring/io-wq.c| refcount_t, unsigned long flags, struct hlist
 ### kbuf
 Structure name | Defined in | Attributes | Caller Functions Source | source caller | usage
 ---------------|------------|------------|-------------------------|---------------|-------------------
-io_provide_buf      | io_uring/kbuf.c | file, __u64, __u32, __u32, __u32, __u16 | io_remove_buffers_prep | io_uring/kbuf.c | local variable, function parameter
+io_provide_buf | io_uring/kbuf.c | file, __u64, __u32, __u32, __u32, __u16 | io_remove_buffers_prep | io_uring/kbuf.c | local variable, function parameter
 | | | | io_remove_buffers | io_uring/kbuf.c | local variable, function parameter
 | | | | io_provide_buffers_prep | io_uring/kbuf.c | local variable, function parameter
 | | | | io_add_buffers | io_uring/kbuf.c | function parameter
 | | | | io_provide_buffers | io_uring/kbuf.c | local variable, function parameter
-io_buffer_list      | io_uring/kbuf.h | list_head, oi_uring_buf_ring, __u16, __u16, __u16, __u16, __u16, __u16, io_mapped_region | io_kbuf_commit | io_uring/kbuf.h | function parameter
+io_buffer_list | io_uring/kbuf.h | list_head, oi_uring_buf_ring, __u16, __u16, __u16, __u16, __u16, __u16, io_mapped_region | io_kbuf_commit | io_uring/kbuf.h | function parameter
 | | | | io_kbuf_inc_commit | io_uring/kbuf.c | function parameter
 | | | | io_kbuf_commit | io_uring/kbuf.c | function parameter
 | | | | io_buffer_get_list | io_uring/kbuf.c | local variable
@@ -263,21 +273,17 @@ io_buffer_list      | io_uring/kbuf.h | list_head, oi_uring_buf_ring, __u16, __u
 | | | | io_unregister_pbuf_ring | io_uring/kbuf.c | local variable
 | | | | io_register_pbuf_status | io_uring/kbuf.c | local variable
 | | | | io_pbuf_get_region | io_uring/kbuf.c | local variable
-io_buffer        | io_uring/kbuf.h | list_head, __u64, __u32, __u16, __u16 | io_kbuf_recycle_legacy | io_uring/kbuf.h | local variable
+io_buffer      | io_uring/kbuf.h | list_head, __u64, __u32, __u16, __u16 | io_kbuf_recycle_legacy | io_uring/kbuf.h | local variable
 | | | | io_provided_buffer_select | io_uring/kbuf.c | local variable, function parameter
 | | | | __io_remove_buffers | io_uring/kbuf.c | local variable, function parameter
 | | | | io_add_buffers | io_uring/kbuf.c | local variable
-buf_sel_arg      | io_uring/kbuf.h | iovec, size_t, size_t, ushort, ushort | io_ring_buffers_peek | io_uring/kbuf.c | function parameter
+buf_sel_arg    | io_uring/kbuf.h | iovec, size_t, size_t, ushort, ushort | io_ring_buffers_peek | io_uring/kbuf.c | function parameter
 | | | | io_buffers_select | io_uring/kbuf.c | function parameter
 | | | | io_buffers_peek | io_uring/kbuf.c | function parameter
 | | | | io_buffers_select | io_uring/kbuf.h | function parameter
 | | | | io_buffers_peek | io_uring/kbuf.h | function parameter
 | | | | io_send_select_buffer | io_uring/net.c | local variable
 | | | | io_recv_buf_select | io_uring/net.c | local variable
-
-### memmap
-Structure name | Defined in | Attributes | Caller Functions Source | source caller | usage
----------------|------------|------------|-------------------------|---------------|-------------------
 
 ### msg_ring
 Structure name | Defined in | Attributes | Caller Functions Source | source caller | usage
@@ -311,7 +317,7 @@ io_splice      | io_uring/splice.c | struct file, loff_t, loff_t, u64, int, unsi
 ### sqpoll
 Structure name | Defined in | Attributes | Caller Functions Source | source caller | usage
 ---------------|------------|------------|-------------------------|---------------|-------------------
-io_sq_data      | io_uring/sqpoll.h| refcount_t, atomic_t, struct mutex	, struct list_head, struct task_struct, struct wait_queue_head,unsigned, int, pid_t, pid_t, u64, unsigned long, struct completion| io_sq_thread_stop | io_uring/sqpoll.h | function parammeter
+io_sq_data     | io_uring/sqpoll.h| refcount_t, atomic_t, struct mutex	, struct list_head, struct task_struct, struct wait_queue_head,unsigned, int, pid_t, pid_t, u64, unsigned long, struct completion| io_sq_thread_stop | io_uring/sqpoll.h | function parammeter
 | | | | io_sq_thread_park | io_uring/sqpoll.h| function parameter
 | | | | io_sq_thread_unpark | io_uring/sqpoll.h| function parameter
 | | | | io_put_sq_data | io_uring/sqpoll.h| function parameter
@@ -333,14 +339,14 @@ io_sq_data      | io_uring/sqpoll.h| refcount_t, atomic_t, struct mutex	, struct
 ### statx
 Structure name | Defined in | Attributes | Caller Functions Source | source caller | usage
 ---------------|------------|------------|-------------------------|---------------|-------------------
-io_statx      | io_uring/statx.c | struct file, int, unsigned int, unsigned int, struct filename, struct statx_user | io_statx_prep | io_uring/statx.c | local variable, function parameter
+io_statx       | io_uring/statx.c | struct file, int, unsigned int, unsigned int, struct filename, struct statx_user | io_statx_prep  | io_uring/statx.c | local variable, function parameter
 | | | | io_statx | io_uring/statx.c | local variable, function parameter
 | | | | io_statx_cleanup | io_uring/statx.c | local variable, function parameter
 
 ### sync
 Structure name | Defined in | Attributes | Caller Functions Source | source caller | usage
 ---------------|------------|------------|-------------------------|---------------|-------------------
-io_sync      | io_uring/sync.c | struct file, int, int, loff_t,  loff_t |  io_sfr_prep | io_uring/sync.c | local variable, function parameter
+io_sync        | io_uring/sync.c | struct file, int, int, loff_t,  loff_t |  io_sfr_prep | io_uring/sync.c | local variable, function parameter
 | | | | io_sync_file_range | io_uring/sync.c | local variable, function parameter
 | | | | io_fsync_prep | io_uring/sync.c | local variable, function parameter
 | | | | io_fsync | io_uring/sync.c | local variable, function parameter
@@ -350,7 +356,7 @@ io_sync      | io_uring/sync.c | struct file, int, int, loff_t,  loff_t |  io_sf
 ### tctx
 Structure name | Defined in | Attributes | Caller Functions Source | source caller | usage
 ---------------|------------|------------|-------------------------|---------------|-------------------
-io_tctx_node      | io_uring/tctx.h | struct list_head, struct task_struct, struct io_ring_ctx | __io_uring_free | io_uring/tctx.c | local variable
+io_tctx_node   | io_uring/tctx.h | struct list_head, struct task_struct, struct io_ring_ctx | __io_uring_free | io_uring/tctx.c | local variable
 | | | | __io_uring_add_tctx_node| io_uring/tctx.c | local variable
 | | | | io_uring_del_tctx_node| io_uring/tctx.c | local variable
 | | | | io_uring_clean_tctx| io_uring/tctx.c | local variable
@@ -358,7 +364,7 @@ io_tctx_node      | io_uring/tctx.h | struct list_head, struct task_struct, stru
 ### timeout
 Structure name | Defined in | Attributes | Caller Functions Source | source caller | usage
 ---------------|------------|------------|-------------------------|---------------|-------------------
-io_timeout      | io_uring/timeout.c| struct file	, u32, struct list_head,  struct io_kiocb	 | io_is_timeout_noseq | io_uring/timeout.c | local variable, function parameter
+io_timeout     | io_uring/timeout.c| struct file	, u32, struct list_head,  struct io_kiocb	 | io_is_timeout_noseq | io_uring/timeout.c | local variable, function parameter
 | | | | io_timeout_finish| io_uring/timeout.c | local variable, function parameter
 | | | | io_timeout_complete| io_uring/timeout.c | local variable
 | | | | io_flush_killed_timeouts| io_uring/timeout.c | local variable, function parameter
@@ -376,9 +382,9 @@ io_timeout      | io_uring/timeout.c| struct file	, u32, struct list_head,  stru
 | | | | list_for_each_prev| io_uring/timeout.c | local variablec, function parameter
 | | | | io_queue_linked_timeout| io_uring/timeout.c | local variablec, function parameter
 | | | | io_kill_timeouts| io_uring/timeout.c | local variable
-io_timeout_rem      | io_uring/timeout.c| struct file	, u64, struct timespec64,  u32, bool | io_timeout_remove_prep | io_uring/timeout.c | local variable, function parameter
+io_timeout_rem  | io_uring/timeout.c| struct file	, u64, struct timespec64,  u32, bool | io_timeout_remove_prep | io_uring/timeout.c | local variable, function parameter
 | | | | io_timeout_remove| io_uring/timeout.c | local variable, function parameter
-io_timeout_data      | io_uring/timeout.h | sstruct io_kiocb, struct hrtimer, struct timespec64, enum hrtimer_mode, u32 | io_is_timeout_noseq | io_uring/timeout.c | local variable
+io_timeout_data     | io_uring/timeout.h | sstruct io_kiocb, struct hrtimer, struct timespec64, enum hrtimer_mode, u32 | io_is_timeout_noseq | io_uring/timeout.c | local variable
 | | | | io_timeout_finish| io_uring/timeout.c | function parameter
 | | | | io_timeout_complete| io_uring/timeout.c | local variable
 | | | | io_kill_timeout| io_uring/timeout.c | local variable
@@ -404,7 +410,7 @@ io_ftrunc      | io_uring/truncate.c| struct file, loff_t | io_ftruncate_prep | 
 ### uring_cmd
 Structure name | Defined in | Attributes | Caller Functions Source | source caller | usage
 ---------------|------------|------------|-------------------------|---------------|-------------------
-io_async_cmd      | io_uring/uring_cmd.h| struct io_uring_cmd_data, struct iou_vec, struct io_uring_sqe | io_cmd_cache_free | io_uring/uring_cmd.c | local variable, function parameter
+io_async_cmd   | io_uring/uring_cmd.h| struct io_uring_cmd_data, struct iou_vec, struct io_uring_sqe | io_cmd_cache_free | io_uring/uring_cmd.c | local variable, function parameter
 | | | | io_req_uring_cleanup| io_uring/uring_cmd.c | local variable
 | | | | io_uring_cmd_prep_setup| io_uring/uring_cmd.c | local variable, function parameter
 | | | | io_uring_cmd_import_fixed_vec| io_uring/uring_cmd.c | local variable,
@@ -412,7 +418,7 @@ io_async_cmd      | io_uring/uring_cmd.h| struct io_uring_cmd_data, struct iou_v
 ### waitid
 Structure name | Defined in | Attributes | Caller Functions Source | source caller | usage
 ---------------|------------|------------|-------------------------|---------------|-------------------
-io_waitid_async      | io_uring/waitid.h| struct io_kiocb, struct wait_opts | io_waitid_free | io_uring/waitid.c | local variable
+io_waitid_async | io_uring/waitid.h| struct io_kiocb, struct wait_opts | io_waitid_free | io_uring/waitid.c | local variable
 | | | | __io_waitid_cancel| io_uring/waitid.c | local variable
 | | | | io_waitid_remove_all| io_uring/waitid.c | local variable
 | | | | io_waitid_cb| io_uring/waitid.c | local variable
@@ -431,7 +437,7 @@ io_waitid      | io_uring/waitid.c| struct file, int which, pid_t upid, int opti
 ### xattr
 Structure name | Defined in | Attributes | Caller Functions Source | source caller | usage
 ---------------|------------|------------|-------------------------|---------------|-------------------
-io_xattr      | io_uring/xattr.c| struct file, struct kernel_xattr_ctx, struct filename | io_xattr_cleanup | io_uring/xattr.c | local variable, funstion parameter
+io_xattr       | io_uring/xattr.c| struct file, struct kernel_xattr_ctx, struct filename | io_xattr_cleanup | io_uring/xattr.c | local variable, funstion parameter
 | | | | __io_getxattr_prep| io_uring/xattr.c | local variable, function parameter
 | | | | io_fgetxattr| io_uring/xattr.c | local variable, function parameter
 | | | | io_getxattr| io_uring/xattr.c | local variable, function parameter
@@ -443,7 +449,7 @@ io_xattr      | io_uring/xattr.c| struct file, struct kernel_xattr_ctx, struct f
 ### zcrx
 Structure name | Defined in | Attributes | Caller Functions Source | source caller | usage
 ---------------|------------|------------|-------------------------|---------------|-------------------
-io_zcrx_area      | io_uring/zcrx.h| struct net_iov_area, struct io_zcrx_ifq, atomic_t, bool, u16, struct page, spinlock_t, u32  | __io_zcrx_unmap_area | io_uring/zcrx.c | function parameter
+io_zcrx_area   | io_uring/zcrx.h| struct net_iov_area, struct io_zcrx_ifq, atomic_t, bool, u16, struct page, spinlock_t, u32  | __io_zcrx_unmap_area | io_uring/zcrx.c | function parameter
 | | | | io_zcrx_unmap_area| io_uring/zcrx.c | function parameter
 | | | | io_zcrx_map_area| io_uring/zcrx.c | function parameter
 | | | | io_get_user_counter| io_uring/zcrx.c | local variable
