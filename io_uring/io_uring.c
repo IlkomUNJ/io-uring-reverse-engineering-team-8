@@ -341,7 +341,7 @@ static void io_free_alloc_caches(struct io_ring_ctx *ctx)
 
 /**
  * Mengalokasikan konteks io_uring.
- * Mengatur struktur data untuk operasi io_uring.
+ * Mengatur struktur data untuk operasi io_uring
  */
 static __cold struct io_ring_ctx *io_ring_ctx_alloc(struct io_uring_params *p)
 {
