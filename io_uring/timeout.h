@@ -11,6 +11,7 @@ struct io_timeout_data {
 struct io_kiocb *__io_disarm_linked_timeout(struct io_kiocb *req,
 					    struct io_kiocb *link);
 
+// Memeriksa dan menonaktifkan timeout yang terhubung jika ada.
 static inline struct io_kiocb *io_disarm_linked_timeout(struct io_kiocb *req)
 {
 	struct io_kiocb *link = req->link;
