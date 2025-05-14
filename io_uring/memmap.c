@@ -14,6 +14,10 @@
 #include "kbuf.h"
 #include "rsrc.h"
 
+/**
+ * Mengalokasikan memori compound untuk halaman.
+ * Mengembalikan alamat awal halaman yang dialokasikan.
+ */
 static void *io_mem_alloc_compound(struct page **pages, int nr_pages,
 				   size_t size, gfp_t gfp)
 {
@@ -36,6 +40,10 @@ static void *io_mem_alloc_compound(struct page **pages, int nr_pages,
 	return page_address(page);
 }
 
+/**
+ * Memetakan halaman memori pengguna ke kernel.
+ * Mengembalikan pointer ke array halaman yang dipetakan.
+ */
 struct page **io_pin_pages(unsigned long uaddr, unsigned long len, int *npages)
 {
 	unsigned long start, end, nr_pages;
@@ -87,6 +95,10 @@ enum {
 	IO_REGION_F_SINGLE_REF			= 4,
 };
 
+/**
+ * Membebaskan sumber daya memori yang dipetakan.
+ * Melepaskan halaman dan memori yang digunakan.
+ */
 void io_free_region(struct io_ring_ctx *ctx, struct io_mapped_region *mr)
 {
 	if (mr->pages) {
@@ -110,6 +122,10 @@ void io_free_region(struct io_ring_ctx *ctx, struct io_mapped_region *mr)
 	memset(mr, 0, sizeof(*mr));
 }
 
+/**
+ * Menginisialisasi pointer untuk region memori.
+ * Memetakan halaman ke alamat virtual kernel jika diperlukan.
+ */
 static int io_region_init_ptr(struct io_mapped_region *mr)
 {
 	struct io_imu_folio_data ifd;
@@ -130,6 +146,10 @@ static int io_region_init_ptr(struct io_mapped_region *mr)
 	return 0;
 }
 
+/**
+ * Memetakan halaman pengguna ke region memori.
+ * Menggunakan pin_user_pages untuk memetakan halaman.
+ */
 static int io_region_pin_pages(struct io_ring_ctx *ctx,
 				struct io_mapped_region *mr,
 				struct io_uring_region_desc *reg)
@@ -149,6 +169,10 @@ static int io_region_pin_pages(struct io_ring_ctx *ctx,
 	return 0;
 }
 
+/**
+ * Mengalokasikan halaman untuk region memori.
+ * Menggunakan memori kernel untuk alokasi.
+ */
 static int io_region_allocate_pages(struct io_ring_ctx *ctx,
 				    struct io_mapped_region *mr,
 				    struct io_uring_region_desc *reg,
@@ -184,6 +208,10 @@ done:
 	return 0;
 }
 
+/**
+ * Membuat region memori baru.
+ * Memetakan halaman pengguna atau mengalokasikan halaman kernel.
+ */
 int io_create_region(struct io_ring_ctx *ctx, struct io_mapped_region *mr,
 		     struct io_uring_region_desc *reg,
 		     unsigned long mmap_offset)
@@ -233,6 +261,10 @@ out_free:
 	return ret;
 }
 
+/**
+ * Membuat region memori baru dengan mmap yang aman.
+ * Menggunakan struktur sementara untuk memastikan konsistensi.
+ */
 int io_create_region_mmap_safe(struct io_ring_ctx *ctx, struct io_mapped_region *mr,
 				struct io_uring_region_desc *reg,
 				unsigned long mmap_offset)
@@ -254,6 +286,10 @@ int io_create_region_mmap_safe(struct io_ring_ctx *ctx, struct io_mapped_region 
 	return 0;
 }
 
+/**
+ * Mengambil region memori berdasarkan offset mmap.
+ * Mengembalikan pointer ke region memori yang sesuai.
+ */
 static struct io_mapped_region *io_mmap_get_region(struct io_ring_ctx *ctx,
 						   loff_t pgoff)
 {
@@ -277,6 +313,10 @@ static struct io_mapped_region *io_mmap_get_region(struct io_ring_ctx *ctx,
 	return NULL;
 }
 
+/**
+ * Memvalidasi region memori untuk mmap.
+ * Memastikan region sudah diatur dan bukan dari pengguna.
+ */
 static void *io_region_validate_mmap(struct io_ring_ctx *ctx,
 				     struct io_mapped_region *mr)
 {
@@ -290,6 +330,10 @@ static void *io_region_validate_mmap(struct io_ring_ctx *ctx,
 	return io_region_get_ptr(mr);
 }
 
+/**
+ * Memvalidasi permintaan mmap untuk io_uring.
+ * Memastikan region memori sesuai dengan permintaan mmap.
+ */
 static void *io_uring_validate_mmap_request(struct file *file, loff_t pgoff,
 					    size_t sz)
 {
@@ -304,6 +348,10 @@ static void *io_uring_validate_mmap_request(struct file *file, loff_t pgoff,
 
 #ifdef CONFIG_MMU
 
+/**
+ * Memetakan region memori ke ruang alamat pengguna.
+ * Menggunakan vm_insert_pages untuk memasukkan halaman ke dalam vma.
+ */
 static int io_region_mmap(struct io_ring_ctx *ctx,
 			  struct io_mapped_region *mr,
 			  struct vm_area_struct *vma,
@@ -315,6 +363,10 @@ static int io_region_mmap(struct io_ring_ctx *ctx,
 	return vm_insert_pages(vma, vma->vm_start, mr->pages, &nr_pages);
 }
 
+/**
+ * Fungsi mmap utama untuk io_uring.
+ * Memetakan region memori ke ruang pengguna.
+ */
 __cold int io_uring_mmap(struct file *file, struct vm_area_struct *vma)
 {
 	struct io_ring_ctx *ctx = file->private_data;
@@ -341,6 +393,10 @@ __cold int io_uring_mmap(struct file *file, struct vm_area_struct *vma)
 	return io_region_mmap(ctx, region, vma, page_limit);
 }
 
+/**
+ * Mendapatkan area yang belum dipetakan untuk io_uring.
+ * Memastikan area sesuai dengan aturan arsitektur.
+ */
 unsigned long io_uring_get_unmapped_area(struct file *filp, unsigned long addr,
 					 unsigned long len, unsigned long pgoff,
 					 unsigned long flags)
@@ -389,16 +445,28 @@ unsigned long io_uring_get_unmapped_area(struct file *filp, unsigned long addr,
 
 #else /* !CONFIG_MMU */
 
+/**
+ * Fungsi mmap untuk sistem tanpa MMU.
+ * Memastikan mmap hanya untuk mapping yang dibagikan.
+ */
 int io_uring_mmap(struct file *file, struct vm_area_struct *vma)
 {
 	return is_nommu_shared_mapping(vma->vm_flags) ? 0 : -EINVAL;
 }
 
+/**
+ * Mendapatkan kemampuan mmap untuk sistem tanpa MMU.
+ * Mengembalikan flag kemampuan mmap.
+ */
 unsigned int io_uring_nommu_mmap_capabilities(struct file *file)
 {
 	return NOMMU_MAP_DIRECT | NOMMU_MAP_READ | NOMMU_MAP_WRITE;
 }
 
+/**
+ * Mendapatkan area yang belum dipetakan untuk io_uring.
+ * Mengembalikan pointer / alamat yang sesuai untuk mmap.
+ */
 unsigned long io_uring_get_unmapped_area(struct file *file, unsigned long addr,
 					 unsigned long len, unsigned long pgoff,
 					 unsigned long flags)

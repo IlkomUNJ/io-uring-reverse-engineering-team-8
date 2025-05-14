@@ -32,6 +32,10 @@ struct io_provide_buf {
 	__u16				bid;
 };
 
+/**
+ * Mengurangi panjang buffer dan memindahkan head jika buffer habis.
+ * Mengembalikan false jika masih ada data, true jika selesai.
+ */
 static bool io_kbuf_inc_commit(struct io_buffer_list *bl, int len)
 {
 	while (len) {
@@ -51,6 +55,10 @@ static bool io_kbuf_inc_commit(struct io_buffer_list *bl, int len)
 	return true;
 }
 
+/**
+ * Mengonfirmasi penggunaan buffer untuk permintaan IO.
+ * Menandai buffer sebagai selesai digunakan.
+ */
 bool io_kbuf_commit(struct io_kiocb *req,
 		    struct io_buffer_list *bl, int len, int nr)
 {
@@ -67,6 +75,10 @@ bool io_kbuf_commit(struct io_kiocb *req,
 	return true;
 }
 
+/**
+ * Mengambil daftar buffer berdasarkan ID grup.
+ * Mengembalikan pointer ke daftar buffer yang sesuai.
+ */
 static inline struct io_buffer_list *io_buffer_get_list(struct io_ring_ctx *ctx,
 							unsigned int bgid)
 {
@@ -88,6 +100,10 @@ static int io_buffer_add_list(struct io_ring_ctx *ctx,
 	return xa_err(xa_store(&ctx->io_bl_xa, bgid, bl, GFP_KERNEL));
 }
 
+/**
+ * Menghapus buffer lama tanpa mendaur ulang.
+ * Membebaskan buffer yang tidak lagi digunakan.
+ */
 void io_kbuf_drop_legacy(struct io_kiocb *req)
 {
 	if (WARN_ON_ONCE(!(req->flags & REQ_F_BUFFER_SELECTED)))
@@ -98,6 +114,10 @@ void io_kbuf_drop_legacy(struct io_kiocb *req)
 	req->kbuf = NULL;
 }
 
+/**
+ * Mendaur ulang buffer untuk permintaan IO lama.
+ * Mengembalikan buffer ke daftar buffer yang tersedia.
+ */
 bool io_kbuf_recycle_legacy(struct io_kiocb *req, unsigned issue_flags)
 {
 	struct io_ring_ctx *ctx = req->ctx;
@@ -116,6 +136,10 @@ bool io_kbuf_recycle_legacy(struct io_kiocb *req, unsigned issue_flags)
 	return true;
 }
 
+/**
+ * Memilih buffer dari daftar buffer yang tersedia.
+ * Mengembalikan pointer ke buffer yang dipilih untuk digunakan.
+ */
 static void __user *io_provided_buffer_select(struct io_kiocb *req, size_t *len,
 					      struct io_buffer_list *bl)
 {
@@ -136,6 +160,10 @@ static void __user *io_provided_buffer_select(struct io_kiocb *req, size_t *len,
 	return NULL;
 }
 
+/**
+ * Memilih buffer dari daftar yang disediakan dan mengisi struktur iovec.
+ * Mengembalikan jumlah buffer yang dipilih atau kode kesalahan.
+ */
 static int io_provided_buffers_select(struct io_kiocb *req, size_t *len,
 				      struct io_buffer_list *bl,
 				      struct iovec *iov)
@@ -151,6 +179,10 @@ static int io_provided_buffers_select(struct io_kiocb *req, size_t *len,
 	return 1;
 }
 
+/**
+ * Memilih buffer dari ring buffer yang dipetakan.
+ * Mengembalikan pointer ke buffer yang dipilih untuk digunakan.
+ */
 static void __user *io_ring_buffer_select(struct io_kiocb *req, size_t *len,
 					  struct io_buffer_list *bl,
 					  unsigned int issue_flags)
@@ -192,6 +224,10 @@ static void __user *io_ring_buffer_select(struct io_kiocb *req, size_t *len,
 	return ret;
 }
 
+/**
+ * Memilih buffer dari daftar atau ring buffer yang tersedia.
+ * Mengembalikan pointer ke buffer yang dipilih untuk digunakan.
+ */
 void __user *io_buffer_select(struct io_kiocb *req, size_t *len,
 			      unsigned int issue_flags)
 {
@@ -215,6 +251,10 @@ void __user *io_buffer_select(struct io_kiocb *req, size_t *len,
 /* cap it at a reasonable 256, will be one page even for 4K */
 #define PEEK_MAX_IMPORT		256
 
+/**
+ * Melihat buffer yang tersedia di ring buffer tanpa mengubah statusnya.
+ * Mengembalikan jumlah buffer yang dapat digunakan atau kode kesalahan.
+ */
 static int io_ring_buffers_peek(struct io_kiocb *req, struct buf_sel_arg *arg,
 				struct io_buffer_list *bl)
 {
@@ -294,6 +334,10 @@ static int io_ring_buffers_peek(struct io_kiocb *req, struct buf_sel_arg *arg,
 	return iov - arg->iovs;
 }
 
+/**
+ * Memilih buffer dari daftar atau ring buffer yang tersedia.
+ * Mengembalikan jumlah buffer yang dipilih atau kode kesalahan.
+ */
 int io_buffers_select(struct io_kiocb *req, struct buf_sel_arg *arg,
 		      unsigned int issue_flags)
 {
@@ -327,6 +371,10 @@ out_unlock:
 	return ret;
 }
 
+/**
+ * Melihat buffer yang tersedia tanpa mengubah statusnya.
+ * Mengembalikan jumlah buffer yang dapat digunakan atau kode kesalahan.
+ */
 int io_buffers_peek(struct io_kiocb *req, struct buf_sel_arg *arg)
 {
 	struct io_ring_ctx *ctx = req->ctx;
@@ -350,6 +398,10 @@ int io_buffers_peek(struct io_kiocb *req, struct buf_sel_arg *arg)
 	return io_provided_buffers_select(req, &arg->max_len, bl, arg->iovs);
 }
 
+/**
+ * Mengembalikan buffer ke ring buffer setelah digunakan.
+ * Menandai buffer sebagai tersedia kembali untuk operasi berikutnya.
+ */
 static inline bool __io_put_kbuf_ring(struct io_kiocb *req, int len, int nr)
 {
 	struct io_buffer_list *bl = req->buf_list;
@@ -363,6 +415,10 @@ static inline bool __io_put_kbuf_ring(struct io_kiocb *req, int len, int nr)
 	return ret;
 }
 
+/**
+ * Mengembalikan buffer ke daftar buffer yang tersedia.
+ * Menandai buffer sebagai tersedia kembali untuk operasi berikutnya.
+ */
 unsigned int __io_put_kbufs(struct io_kiocb *req, int len, int nbufs)
 {
 	unsigned int ret;
@@ -379,6 +435,10 @@ unsigned int __io_put_kbufs(struct io_kiocb *req, int len, int nbufs)
 	return ret;
 }
 
+/**
+ * Menghapus buffer dari daftar buffer yang terdaftar.
+ * Membebaskan memori buffer hingga jumlah yang diminta atau hingga daftar kosong.
+ */
 static int __io_remove_buffers(struct io_ring_ctx *ctx,
 			       struct io_buffer_list *bl, unsigned nbufs)
 {
@@ -415,12 +475,20 @@ static int __io_remove_buffers(struct io_ring_ctx *ctx,
 	return i;
 }
 
+/**
+ * Membebaskan daftar buffer.
+ * Menghapus semua buffer dari daftar dan membebaskan memori yang digunakan.
+ */
 static void io_put_bl(struct io_ring_ctx *ctx, struct io_buffer_list *bl)
 {
 	__io_remove_buffers(ctx, bl, -1U);
 	kfree(bl);
 }
 
+/**
+ * Menghapus semua buffer yang terdaftar.
+ * Membebaskan semua memori yang digunakan oleh buffer.
+ */
 void io_destroy_buffers(struct io_ring_ctx *ctx)
 {
 	struct io_buffer_list *bl;
@@ -439,6 +507,10 @@ void io_destroy_buffers(struct io_ring_ctx *ctx)
 	}
 }
 
+/**
+ * Menghapus buffer yang terdaftar dari daftar.
+ * Membebaskan memori yang digunakan oleh buffer dan menghapusnya dari daftar.
+ */
 static void io_destroy_bl(struct io_ring_ctx *ctx, struct io_buffer_list *bl)
 {
 	scoped_guard(mutex, &ctx->mmap_lock)
@@ -446,6 +518,10 @@ static void io_destroy_bl(struct io_ring_ctx *ctx, struct io_buffer_list *bl)
 	io_put_bl(ctx, bl);
 }
 
+/**
+ * Mempersiapkan penghapusan buffer berdasarkan SQE.
+ * Memvalidasi parameter dan mengisi struktur untuk operasi penghapusan.
+ */
 int io_remove_buffers_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 {
 	struct io_provide_buf *p = io_kiocb_to_cmd(req, struct io_provide_buf);
@@ -465,6 +541,10 @@ int io_remove_buffers_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 	return 0;
 }
 
+/**
+ * Menghapus buffer yang terdaftar.
+ * Membebaskan buffer yang tidak lagi diperlukan.
+ */
 int io_remove_buffers(struct io_kiocb *req, unsigned int issue_flags)
 {
 	struct io_provide_buf *p = io_kiocb_to_cmd(req, struct io_provide_buf);
@@ -489,6 +569,10 @@ int io_remove_buffers(struct io_kiocb *req, unsigned int issue_flags)
 	return IOU_OK;
 }
 
+/**
+ * Mempersiapkan penyediaan buffer berdasarkan SQE.
+ * Memvalidasi parameter dan mengisi struktur untuk operasi penyediaan buffer.
+ */
 int io_provide_buffers_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 {
 	unsigned long size, tmp_check;
@@ -525,6 +609,11 @@ int io_provide_buffers_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe
 	return 0;
 }
 
+/**
+ * Menambahkan buffer baru ke daftar buffer yang telah ada.
+ * Membuat struktur buffer baru, menginisialisasi properti, dan menambahkannya ke list.
+ * Mengembalikan 0 jika berhasil atau -ENOMEM jika gagal mengalokasikan memori.
+ */
 static int io_add_buffers(struct io_ring_ctx *ctx, struct io_provide_buf *pbuf,
 			  struct io_buffer_list *bl)
 {
@@ -550,6 +639,10 @@ static int io_add_buffers(struct io_ring_ctx *ctx, struct io_provide_buf *pbuf,
 	return i ? 0 : -ENOMEM;
 }
 
+/**
+ * Menyediakan buffer baru untuk digunakan.
+ * Menambahkan buffer ke dalam daftar buffer yang tersedia.
+ */
 int io_provide_buffers(struct io_kiocb *req, unsigned int issue_flags)
 {
 	struct io_provide_buf *p = io_kiocb_to_cmd(req, struct io_provide_buf);
@@ -589,6 +682,10 @@ err:
 	return IOU_OK;
 }
 
+/**
+ * Mendaftarkan ring buffer untuk penyediaan buffer.
+ * Menghubungkan ring buffer ke konteks io_uring.
+ */
 int io_register_pbuf_ring(struct io_ring_ctx *ctx, void __user *arg)
 {
 	struct io_uring_buf_reg reg;
@@ -671,6 +768,10 @@ fail:
 	return ret;
 }
 
+/**
+ * Membatalkan pendaftaran ring buffer.
+ * Melepaskan ring buffer dari konteks io_uring.
+ */
 int io_unregister_pbuf_ring(struct io_ring_ctx *ctx, void __user *arg)
 {
 	struct io_uring_buf_reg reg;
@@ -698,6 +799,10 @@ int io_unregister_pbuf_ring(struct io_ring_ctx *ctx, void __user *arg)
 	return 0;
 }
 
+/**
+ * Mengatur status buffer ring ke pengguna.
+ * Mengembalikan 0 jika berhasil, atau kode kesalahan jika gagal.
+ */
 int io_register_pbuf_status(struct io_ring_ctx *ctx, void __user *arg)
 {
 	struct io_uring_buf_status buf_status;
@@ -724,6 +829,10 @@ int io_register_pbuf_status(struct io_ring_ctx *ctx, void __user *arg)
 	return 0;
 }
 
+/**
+ * Mendapatkan region memori berdasarkan buffer group ID.
+ * Mengembalikan pointer ke region memori yang sesuai.
+ */
 struct io_mapped_region *io_pbuf_get_region(struct io_ring_ctx *ctx,
 					    unsigned int bgid)
 {

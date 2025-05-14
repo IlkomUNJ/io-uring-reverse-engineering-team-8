@@ -30,6 +30,10 @@ struct io_wq_hash {
 	struct wait_queue_head wait;
 };
 
+/**
+ * Mengurangi referensi hash io_wq.
+ * Membebaskan memori jika referensi mencapai nol.
+ */
 static inline void io_wq_put_hash(struct io_wq_hash *hash)
 {
 	if (refcount_dec_and_test(&hash->refs))
@@ -54,11 +58,19 @@ int io_wq_cpu_affinity(struct io_uring_task *tctx, cpumask_var_t mask);
 int io_wq_max_workers(struct io_wq *wq, int *new_count);
 bool io_wq_worker_stopped(void);
 
+/**
+ * Mengecek apakah pekerjaan io_wq di-hash.
+ * Mengembalikan true jika pekerjaan memiliki flag hashed.
+ */
 static inline bool __io_wq_is_hashed(unsigned int work_flags)
 {
 	return work_flags & IO_WQ_WORK_HASHED;
 }
 
+/**
+ * Mengecek apakah pekerjaan io_wq di-hash.
+ * Menggunakan flag pekerjaan untuk menentukan status.
+ */
 static inline bool io_wq_is_hashed(struct io_wq_work *work)
 {
 	return __io_wq_is_hashed(atomic_read(&work->flags));
@@ -73,14 +85,27 @@ enum io_wq_cancel io_wq_cancel_cb(struct io_wq *wq, work_cancel_fn *cancel,
 extern void io_wq_worker_sleeping(struct task_struct *);
 extern void io_wq_worker_running(struct task_struct *);
 #else
+/**
+ * Fungsi dummy untuk menandai pekerja io_wq sedang tidur.
+ * Tidak melakukan apa-apa jika CONFIG_IO_WQ tidak diaktifkan.
+ */
 static inline void io_wq_worker_sleeping(struct task_struct *tsk)
 {
 }
+
+/**
+ * Fungsi dummy untuk menandai pekerja io_wq sedang berjalan.
+ * Tidak melakukan apa-apa jika CONFIG_IO_WQ tidak diaktifkan.
+ */
 static inline void io_wq_worker_running(struct task_struct *tsk)
 {
 }
 #endif
 
+/**
+ * Mengecek apakah tugas saat ini adalah pekerja io_wq.
+ * Mengembalikan true jika tugas adalah pekerja io_wq.
+ */
 static inline bool io_wq_current_is_worker(void)
 {
 	return in_task() && (current->flags & PF_IO_WORKER) &&

@@ -33,17 +33,29 @@ struct io_futex_data {
 
 #define IO_FUTEX_ALLOC_CACHE_MAX	32
 
+/**
+ * Menginisialisasi cache futex untuk konteks io_uring.
+ * Mengembalikan true jika berhasil, false jika gagal.
+ */
 bool io_futex_cache_init(struct io_ring_ctx *ctx)
 {
 	return io_alloc_cache_init(&ctx->futex_cache, IO_FUTEX_ALLOC_CACHE_MAX,
 				sizeof(struct io_futex_data), 0);
 }
 
+/**
+ * Membebaskan cache futex yang dialokasikan.
+ * Membersihkan semua memori yang digunakan oleh cache futex.
+ */
 void io_futex_cache_free(struct io_ring_ctx *ctx)
 {
 	io_alloc_cache_free(&ctx->futex_cache, kfree);
 }
 
+/**
+ * Menyelesaikan operasi futex secara internal.
+ * Menghapus permintaan dari daftar hash dan menyelesaikan tugas.
+ */
 static void __io_futex_complete(struct io_kiocb *req, io_tw_token_t tw)
 {
 	req->async_data = NULL;
@@ -51,6 +63,10 @@ static void __io_futex_complete(struct io_kiocb *req, io_tw_token_t tw)
 	io_req_task_complete(req, tw);
 }
 
+/**
+ * Menyelesaikan operasi futex tunggal.
+ * Membebaskan data asinkron dan menyelesaikan permintaan.
+ */
 static void io_futex_complete(struct io_kiocb *req, io_tw_token_t tw)
 {
 	struct io_ring_ctx *ctx = req->ctx;
@@ -60,6 +76,10 @@ static void io_futex_complete(struct io_kiocb *req, io_tw_token_t tw)
 	__io_futex_complete(req, tw);
 }
 
+/**
+ * Menyelesaikan operasi futex vector.
+ * Membebaskan data vector dan menyelesaikan permintaan.
+ */
 static void io_futexv_complete(struct io_kiocb *req, io_tw_token_t tw)
 {
 	struct io_futex *iof = io_kiocb_to_cmd(req, struct io_futex);
@@ -80,6 +100,10 @@ static void io_futexv_complete(struct io_kiocb *req, io_tw_token_t tw)
 	__io_futex_complete(req, tw);
 }
 
+/**
+ * Mengklaim kepemilikan futex vector.
+ * Mengembalikan true jika berhasil, false jika sudah dimiliki.
+ */
 static bool io_futexv_claim(struct io_futex *iof)
 {
 	if (test_bit(0, &iof->futexv_owned) ||
@@ -88,6 +112,10 @@ static bool io_futexv_claim(struct io_futex *iof)
 	return true;
 }
 
+/**
+ * Membatalkan operasi futex.
+ * Menghapus permintaan dari daftar hash dan menandainya sebagai dibatalkan.
+ */
 static bool __io_futex_cancel(struct io_kiocb *req)
 {
 	/* futex wake already done or in progress */
@@ -111,18 +139,30 @@ static bool __io_futex_cancel(struct io_kiocb *req)
 	return true;
 }
 
+/**
+ * Membatalkan operasi futex yang sedang berjalan.
+ * Mengembalikan status pembatalan berdasarkan hasil operasi.
+ */
 int io_futex_cancel(struct io_ring_ctx *ctx, struct io_cancel_data *cd,
 		    unsigned int issue_flags)
 {
 	return io_cancel_remove(ctx, cd, issue_flags, &ctx->futex_list, __io_futex_cancel);
 }
 
+/**
+ * Menghapus semua operasi futex yang terdaftar.
+ * Mengembalikan true jika ada operasi yang berhasil dihapus.
+ */
 bool io_futex_remove_all(struct io_ring_ctx *ctx, struct io_uring_task *tctx,
 			 bool cancel_all)
 {
 	return io_cancel_remove_all(ctx, tctx, &ctx->futex_list, cancel_all, __io_futex_cancel);
 }
 
+/**
+ * Mempersiapkan operasi futex berdasarkan SQE.
+ * Memvalidasi parameter dan mengisi struktur permintaan futex.
+ */
 int io_futex_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 {
 	struct io_futex *iof = io_kiocb_to_cmd(req, struct io_futex);
@@ -151,6 +191,10 @@ int io_futex_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 	return 0;
 }
 
+/**
+ * Menyelesaikan operasi futex vector wake.
+ * Menambahkan pekerjaan ke daftar tugas untuk menyelesaikan permintaan.
+ */
 static void io_futex_wakev_fn(struct wake_q_head *wake_q, struct futex_q *q)
 {
 	struct io_kiocb *req = q->wake_data;
@@ -166,6 +210,10 @@ static void io_futex_wakev_fn(struct wake_q_head *wake_q, struct futex_q *q)
 	io_req_task_work_add(req);
 }
 
+/**
+ * Mempersiapkan operasi futex vector berdasarkan SQE.
+ * Memvalidasi parameter dan mengisi struktur permintaan futex vector.
+ */
 int io_futexv_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 {
 	struct io_futex *iof = io_kiocb_to_cmd(req, struct io_futex);
@@ -200,6 +248,10 @@ int io_futexv_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 	return 0;
 }
 
+/**
+ * Menyelesaikan operasi futex wake.
+ * Menambahkan pekerjaan ke daftar tugas untuk menyelesaikan permintaan.
+ */
 static void io_futex_wake_fn(struct wake_q_head *wake_q, struct futex_q *q)
 {
 	struct io_futex_data *ifd = container_of(q, struct io_futex_data, q);
@@ -213,6 +265,10 @@ static void io_futex_wake_fn(struct wake_q_head *wake_q, struct futex_q *q)
 	io_req_task_work_add(req);
 }
 
+/**
+ * Menunggu kondisi futex vector terpenuhi.
+ * Memblokir hingga salah satu kondisi terpenuhi atau waktu habis.
+ */
 int io_futexv_wait(struct io_kiocb *req, unsigned int issue_flags)
 {
 	struct io_futex *iof = io_kiocb_to_cmd(req, struct io_futex);
@@ -268,6 +324,10 @@ int io_futexv_wait(struct io_kiocb *req, unsigned int issue_flags)
 	return IOU_ISSUE_SKIP_COMPLETE;
 }
 
+/**
+ * Menunggu kondisi futex terpenuhi.
+ * Memblokir hingga kondisi terpenuhi atau waktu habis.
+ */
 int io_futex_wait(struct io_kiocb *req, unsigned int issue_flags)
 {
 	struct io_futex *iof = io_kiocb_to_cmd(req, struct io_futex);
@@ -314,6 +374,10 @@ done:
 	return IOU_OK;
 }
 
+/**
+ * Membangunkan thread yang menunggu pada futex.
+ * Mengirimkan sinyal bangun ke thread yang sesuai.
+ */
 int io_futex_wake(struct io_kiocb *req, unsigned int issue_flags)
 {
 	struct io_futex *iof = io_kiocb_to_cmd(req, struct io_futex);

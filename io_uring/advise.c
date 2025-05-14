@@ -28,6 +28,10 @@ struct io_madvise {
 	u32				advice;
 };
 
+/**
+ * Fungsi ini untuk menyiapkan operasi madvise dengan mengekstrak parameter dari io_uring_sqe.
+ * Mengatur request untuk memaksa mode async jika didukung.
+ */
 int io_madvise_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 {
 #if defined(CONFIG_ADVISE_SYSCALLS) && defined(CONFIG_MMU)
@@ -48,6 +52,10 @@ int io_madvise_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 #endif
 }
 
+/**
+ * Fungsi ini untuk menjalankan operasi madvise menggunakan parameter yang telah diekstrak.
+ * Mengembalikan IOU_OK jika berhasil atau kode error jika gagal.
+ */
 int io_madvise(struct io_kiocb *req, unsigned int issue_flags)
 {
 #if defined(CONFIG_ADVISE_SYSCALLS) && defined(CONFIG_MMU)
@@ -64,6 +72,9 @@ int io_madvise(struct io_kiocb *req, unsigned int issue_flags)
 #endif
 }
 
+/**
+ * Memeriksa apakah operasi fadvise harus dipaksa ke mode async.
+ */
 static bool io_fadvise_force_async(struct io_fadvise *fa)
 {
 	switch (fa->advice) {
@@ -76,6 +87,10 @@ static bool io_fadvise_force_async(struct io_fadvise *fa)
 	}
 }
 
+/**
+ * Fungsi ini untuk menyiapkan operasi fadvise dengan mengekstrak parameter dari io_uring_sqe.
+ * Mengatur request untuk memaksa mode async jika diperlukan.
+ */
 int io_fadvise_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 {
 	struct io_fadvise *fa = io_kiocb_to_cmd(req, struct io_fadvise);
@@ -93,6 +108,10 @@ int io_fadvise_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 	return 0;
 }
 
+/**
+ * Fungsi ini untuk menjalankan operasi fadvise menggunakan parameter yang telah diekstrak.
+ * Mengembalikan IOU_OK jika berhasil atau kode error jika gagal.
+ */
 int io_fadvise(struct io_kiocb *req, unsigned int issue_flags)
 {
 	struct io_fadvise *fa = io_kiocb_to_cmd(req, struct io_fadvise);

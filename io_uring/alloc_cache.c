@@ -2,6 +2,10 @@
 
 #include "alloc_cache.h"
 
+/**
+ * Membebaskan semua entri dalam cache dan membersihkan memori yang digunakan.
+ * Memastikan cache kosong setelah fungsi ini dipanggil.
+ */
 void io_alloc_cache_free(struct io_alloc_cache *cache,
 			 void (*free)(const void *))
 {
@@ -18,6 +22,10 @@ void io_alloc_cache_free(struct io_alloc_cache *cache,
 }
 
 /* returns false if the cache was initialized properly */
+/**
+ * Membebaskan semua entri dalam cache dan membersihkan memori yang digunakan.
+ * Memastikan cache kosong setelah fungsi ini dipanggil.
+ */
 bool io_alloc_cache_init(struct io_alloc_cache *cache,
 			 unsigned max_nr, unsigned int size,
 			 unsigned int init_bytes)
@@ -33,6 +41,11 @@ bool io_alloc_cache_init(struct io_alloc_cache *cache,
 	return false;
 }
 
+/**
+ * Mengalokasikan memori baru jika cache kosong.
+ * Jika init_clear diatur, memori yang dialokasikan akan diinisialisasi ke nol.
+ * Fungsi ini memastikan alokasi memori sesuai dengan ukuran elemen cache.
+ */
 void *io_cache_alloc_new(struct io_alloc_cache *cache, gfp_t gfp)
 {
 	void *obj;

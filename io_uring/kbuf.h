@@ -84,6 +84,10 @@ bool io_kbuf_commit(struct io_kiocb *req,
 struct io_mapped_region *io_pbuf_get_region(struct io_ring_ctx *ctx,
 					    unsigned int bgid);
 
+/**
+ * Mendaur ulang buffer untuk ring buffer.
+ * Mengatur ulang buffer tanpa menambah head.
+ */
 static inline bool io_kbuf_recycle_ring(struct io_kiocb *req)
 {
 	/*
@@ -101,6 +105,10 @@ static inline bool io_kbuf_recycle_ring(struct io_kiocb *req)
 	return false;
 }
 
+/**
+ * Mengecek apakah buffer perlu dipilih.
+ * Mengembalikan true jika buffer belum dipilih.
+ */
 static inline bool io_do_buffer_select(struct io_kiocb *req)
 {
 	if (!(req->flags & REQ_F_BUFFER_SELECT))
@@ -108,6 +116,10 @@ static inline bool io_do_buffer_select(struct io_kiocb *req)
 	return !(req->flags & (REQ_F_BUFFER_SELECTED|REQ_F_BUFFER_RING));
 }
 
+/**
+ * Mendaur ulang buffer berdasarkan flag permintaan.
+ * Memilih metode daur ulang yang sesuai.
+ */
 static inline bool io_kbuf_recycle(struct io_kiocb *req, unsigned issue_flags)
 {
 	if (req->flags & REQ_F_BL_NO_RECYCLE)
@@ -119,6 +131,10 @@ static inline bool io_kbuf_recycle(struct io_kiocb *req, unsigned issue_flags)
 	return false;
 }
 
+/**
+ * Menyimpan buffer yang digunakan kembali ke daftar buffer.
+ * Digunakan untuk buffer tunggal.
+ */
 static inline unsigned int io_put_kbuf(struct io_kiocb *req, int len,
 				       unsigned issue_flags)
 {
@@ -127,6 +143,10 @@ static inline unsigned int io_put_kbuf(struct io_kiocb *req, int len,
 	return __io_put_kbufs(req, len, 1);
 }
 
+/**
+ * Menyimpan beberapa buffer yang digunakan kembali ke daftar buffer.
+ * Digunakan untuk buffer dalam jumlah banyak.
+ */
 static inline unsigned int io_put_kbufs(struct io_kiocb *req, int len,
 					int nbufs, unsigned issue_flags)
 {

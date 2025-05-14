@@ -25,6 +25,10 @@ enum {
 	IO_EVENTFD_OP_SIGNAL_BIT,
 };
 
+/**
+ * Membebaskan struktur io_ev_fd.
+ * Melepaskan referensi ke eventfd_ctx dan membebaskan memori.
+ */
 static void io_eventfd_free(struct rcu_head *rcu)
 {
 	struct io_ev_fd *ev_fd = container_of(rcu, struct io_ev_fd, rcu);
@@ -33,12 +37,20 @@ static void io_eventfd_free(struct rcu_head *rcu)
 	kfree(ev_fd);
 }
 
+/**
+ * Mengurangi referensi pada io_ev_fd.
+ * Membebaskan memori jika referensi mencapai nol.
+ */
 static void io_eventfd_put(struct io_ev_fd *ev_fd)
 {
 	if (refcount_dec_and_test(&ev_fd->refs))
 		call_rcu(&ev_fd->rcu, io_eventfd_free);
 }
 
+/**
+ * Menjalankan sinyal eventfd secara asinkron.
+ * Memanggil eventfd_signal dan mengurangi referensi.
+ */
 static void io_eventfd_do_signal(struct rcu_head *rcu)
 {
 	struct io_ev_fd *ev_fd = container_of(rcu, struct io_ev_fd, rcu);
@@ -47,6 +59,10 @@ static void io_eventfd_do_signal(struct rcu_head *rcu)
 	io_eventfd_put(ev_fd);
 }
 
+/**
+ * Melepaskan referensi io_ev_fd dan membuka kunci RCU.
+ * Membebaskan referensi jika diperlukan.
+ */
 static void io_eventfd_release(struct io_ev_fd *ev_fd, bool put_ref)
 {
 	if (put_ref)
@@ -54,6 +70,10 @@ static void io_eventfd_release(struct io_ev_fd *ev_fd, bool put_ref)
 	rcu_read_unlock();
 }
 
+/**
+ * Mengirimkan sinyal ke eventfd jika diizinkan.
+ * Mengembalikan true jika sinyal berhasil dikirim, false jika tidak.
+ */
 /*
  * Returns true if the caller should put the ev_fd reference, false if not.
  */
@@ -70,6 +90,10 @@ static bool __io_eventfd_signal(struct io_ev_fd *ev_fd)
 	return true;
 }
 
+/**
+ * Mengecek apakah eventfd dapat dipicu.
+ * Mengembalikan true jika eventfd dapat dipicu, false jika tidak.
+ */
 /*
  * Trigger if eventfd_async isn't set, or if it's set and the caller is
  * an async worker. If ev_fd isn't valid, obviously return false.
@@ -81,6 +105,10 @@ static bool io_eventfd_trigger(struct io_ev_fd *ev_fd)
 	return false;
 }
 
+/**
+ * Mengambil referensi io_ev_fd dengan kunci RCU.
+ * Mengembalikan pointer ke io_ev_fd jika berhasil, NULL jika gagal.
+ */
 /*
  * On success, returns with an ev_fd reference grabbed and the RCU read
  * lock held.
@@ -112,6 +140,10 @@ static struct io_ev_fd *io_eventfd_grab(struct io_ring_ctx *ctx)
 	return NULL;
 }
 
+/**
+ * Mengirimkan sinyal ke eventfd.
+ * Mengambil referensi io_ev_fd dan memproses sinyal.
+ */
 void io_eventfd_signal(struct io_ring_ctx *ctx)
 {
 	struct io_ev_fd *ev_fd;
@@ -121,6 +153,10 @@ void io_eventfd_signal(struct io_ring_ctx *ctx)
 		io_eventfd_release(ev_fd, __io_eventfd_signal(ev_fd));
 }
 
+/**
+ * Mengirimkan sinyal ke eventfd jika ada CQE baru.
+ * Memastikan sinyal hanya dikirim jika ada perubahan pada CQ ring.
+ */
 void io_eventfd_flush_signal(struct io_ring_ctx *ctx)
 {
 	struct io_ev_fd *ev_fd;
@@ -150,6 +186,10 @@ void io_eventfd_flush_signal(struct io_ring_ctx *ctx)
 	}
 }
 
+/**
+ * Mendaftarkan eventfd ke dalam konteks io_uring.
+ * Mengatur eventfd untuk menerima sinyal dari CQ ring.
+ */
 int io_eventfd_register(struct io_ring_ctx *ctx, void __user *arg,
 			unsigned int eventfd_async)
 {
@@ -189,6 +229,10 @@ int io_eventfd_register(struct io_ring_ctx *ctx, void __user *arg,
 	return 0;
 }
 
+/**
+ * Membatalkan pendaftaran eventfd dari konteks io_uring.
+ * Menghapus referensi ke eventfd dan membebaskan memori.
+ */
 int io_eventfd_unregister(struct io_ring_ctx *ctx)
 {
 	struct io_ev_fd *ev_fd;
