@@ -998,6 +998,7 @@ out:
 }
 
 // Fungsi ini adalah handler utama untuk menerima data TCP secara zero-copy pada io_uring
+// Fungsi ini adalah handler utama untuk menerima data TCP secara zero-copy pada io_uring
 static int io_zcrx_tcp_recvmsg(struct io_kiocb *req, struct io_zcrx_ifq *ifq,
 				struct sock *sk, int flags,
 				unsigned issue_flags, unsigned int *outlen)
