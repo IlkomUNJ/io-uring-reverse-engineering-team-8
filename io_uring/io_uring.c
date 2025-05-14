@@ -143,6 +143,10 @@ struct io_defer_entry {
 /* Forced wake up if there is a waiter regardless of ->cq_wait_nr */
 #define IO_CQ_WAKE_FORCE	(IO_CQ_WAKE_INIT >> 1)
 
+/**
+ * Mengecek apakah ada pekerjaan yang cocok untuk dibatalkan.
+ * Mengembalikan true jika ada pekerjaan yang cocok.
+ */
 static bool io_uring_try_cancel_requests(struct io_ring_ctx *ctx,
 					 struct io_uring_task *tctx,
 					 bool cancel_all,
@@ -179,16 +183,28 @@ static const struct ctl_table kernel_io_uring_disabled_table[] = {
 };
 #endif
 
+/**
+ * Menghitung jumlah event pada CQ ring.
+ * Mengembalikan jumlah event yang tersedia.
+ */
 static inline unsigned int __io_cqring_events(struct io_ring_ctx *ctx)
 {
 	return ctx->cached_cq_tail - READ_ONCE(ctx->rings->cq.head);
 }
 
+/**
+ * Menghitung jumlah event pada CQ ring untuk pengguna.
+ * Mengembalikan jumlah event yang tersedia untuk aplikasi.
+ */
 static inline unsigned int __io_cqring_events_user(struct io_ring_ctx *ctx)
 {
 	return READ_ONCE(ctx->rings->cq.tail) - READ_ONCE(ctx->rings->cq.head);
 }
 
+/**
+ * Mengecek apakah permintaan terkait memiliki pekerjaan yang sedang berjalan.
+ * Mengembalikan true jika ada pekerjaan yang sedang berjalan.
+ */
 static bool io_match_linked(struct io_kiocb *head)
 {
 	struct io_kiocb *req;
@@ -200,6 +216,10 @@ static bool io_match_linked(struct io_kiocb *head)
 	return false;
 }
 
+/**
+ * Membatalkan pekerjaan yang terkait dengan aman.
+ * Melindungi dari balapan dengan timeout terkait.
+ */
 /*
  * As io_match_task() but protected against racing with linked timeouts.
  * User must not hold timeout_lock.
@@ -227,17 +247,29 @@ bool io_match_task_safe(struct io_kiocb *head, struct io_uring_task *tctx,
 	return matched;
 }
 
+/**
+ * Menandai permintaan sebagai gagal.
+ * Mengatur hasil kegagalan pada permintaan.
+ */
 static inline void req_fail_link_node(struct io_kiocb *req, int res)
 {
 	req_set_fail(req);
 	io_req_set_res(req, res, 0);
 }
 
+/**
+ * Menambahkan permintaan ke cache.
+ * Memastikan permintaan tersedia untuk digunakan kembali.
+ */
 static inline void io_req_add_to_cache(struct io_kiocb *req, struct io_ring_ctx *ctx)
 {
 	wq_stack_add_head(&req->comp_list, &ctx->submit_state.free_list);
 }
 
+/**
+ * Membebaskan referensi konteks io_uring.
+ * Menyelesaikan semua pekerjaan yang tertunda.
+ */
 static __cold void io_ring_ctx_ref_free(struct percpu_ref *ref)
 {
 	struct io_ring_ctx *ctx = container_of(ref, struct io_ring_ctx, refs);
@@ -245,6 +277,10 @@ static __cold void io_ring_ctx_ref_free(struct percpu_ref *ref)
 	complete(&ctx->ref_comp);
 }
 
+/**
+ * Menangani pekerjaan fallback untuk permintaan.
+ * Menyelesaikan pekerjaan yang tidak dapat diproses secara langsung.
+ */
 static __cold void io_fallback_req_func(struct work_struct *work)
 {
 	struct io_ring_ctx *ctx = container_of(work, struct io_ring_ctx,
@@ -262,6 +298,10 @@ static __cold void io_fallback_req_func(struct work_struct *work)
 	percpu_ref_put(&ctx->refs);
 }
 
+/**
+ * Mengalokasikan tabel hash untuk io_uring.
+ * Mengembalikan 0 jika berhasil, atau kode kesalahan jika gagal.
+ */
 static int io_alloc_hash_table(struct io_hash_table *table, unsigned bits)
 {
 	unsigned int hash_buckets;
@@ -284,6 +324,10 @@ static int io_alloc_hash_table(struct io_hash_table *table, unsigned bits)
 	return 0;
 }
 
+/**
+ * Membebaskan cache alokasi untuk io_uring.
+ * Membersihkan semua memori yang digunakan oleh cache.
+ */
 static void io_free_alloc_caches(struct io_ring_ctx *ctx)
 {
 	io_alloc_cache_free(&ctx->apoll_cache, kfree);
@@ -295,6 +339,10 @@ static void io_free_alloc_caches(struct io_ring_ctx *ctx)
 	io_rsrc_cache_free(ctx);
 }
 
+/**
+ * Mengalokasikan konteks io_uring.
+ * Mengatur struktur data untuk operasi io_uring.
+ */
 static __cold struct io_ring_ctx *io_ring_ctx_alloc(struct io_uring_params *p)
 {
 	struct io_ring_ctx *ctx;
@@ -379,7 +427,10 @@ err:
 	kfree(ctx);
 	return NULL;
 }
-
+/**
+ * Menangani overflow pada CQ ring.
+ * Menambahkan entri overflow ke daftar overflow.
+ */
 static void io_account_cq_overflow(struct io_ring_ctx *ctx)
 {
 	struct io_rings *r = ctx->rings;
@@ -388,6 +439,10 @@ static void io_account_cq_overflow(struct io_ring_ctx *ctx)
 	ctx->cq_extra--;
 }
 
+/**
+ * Mengecek apakah permintaan perlu ditunda.
+ * Mengembalikan true jika permintaan perlu ditunda.
+ */
 static bool req_need_defer(struct io_kiocb *req, u32 seq)
 {
 	if (unlikely(req->flags & REQ_F_IO_DRAIN)) {
@@ -399,6 +454,10 @@ static bool req_need_defer(struct io_kiocb *req, u32 seq)
 	return false;
 }
 
+/**
+ * Membersihkan operasi pada permintaan.
+ * Membebaskan sumber daya yang terkait dengan permintaan.
+ */
 static void io_clean_op(struct io_kiocb *req)
 {
 	if (unlikely(req->flags & REQ_F_BUFFER_SELECTED))
@@ -426,6 +485,10 @@ static void io_clean_op(struct io_kiocb *req)
 	req->flags &= ~IO_REQ_CLEAN_FLAGS;
 }
 
+/**
+ * Melacak permintaan yang sedang berjalan.
+ * Menambahkan permintaan ke daftar inflight.
+ */
 static inline void io_req_track_inflight(struct io_kiocb *req)
 {
 	if (!(req->flags & REQ_F_INFLIGHT)) {
@@ -434,6 +497,10 @@ static inline void io_req_track_inflight(struct io_kiocb *req)
 	}
 }
 
+/**
+ * Mempersiapkan timeout terkait untuk permintaan.
+ * Mengembalikan permintaan timeout yang terkait.
+ */
 static struct io_kiocb *__io_prep_linked_timeout(struct io_kiocb *req)
 {
 	if (WARN_ON_ONCE(!req->link))
@@ -466,6 +533,10 @@ static inline void io_arm_ltimeout(struct io_kiocb *req)
 		__io_arm_ltimeout(req);
 }
 
+/**
+ * Menjadwalkan pekerjaan asinkron untuk permintaan.
+ * Mengatur pekerjaan untuk diproses oleh worker thread.
+ */
 static void io_prep_async_work(struct io_kiocb *req)
 {
 	const struct io_issue_def *def = &io_issue_defs[req->opcode];
@@ -516,6 +587,10 @@ static void io_prep_async_link(struct io_kiocb *req)
 	}
 }
 
+/**
+ * Menambahkan pekerjaan ke io_wq.
+ * Menjadwalkan pekerjaan untuk diproses oleh worker thread.
+ */
 static void io_queue_iowq(struct io_kiocb *req)
 {
 	struct io_kiocb *link = io_prep_linked_timeout(req);
@@ -834,6 +909,10 @@ static bool io_fill_cqe_aux(struct io_ring_ctx *ctx, u64 user_data, s32 res,
 	return false;
 }
 
+/**
+ * Menambahkan CQE tambahan ke ring buffer.
+ * Mengembalikan true jika berhasil, false jika gagal.
+ */
 bool io_post_aux_cqe(struct io_ring_ctx *ctx, u64 user_data, s32 res, u32 cflags)
 {
 	bool filled;
@@ -983,6 +1062,10 @@ __cold bool __io_alloc_req_refill(struct io_ring_ctx *ctx)
 	return true;
 }
 
+/**
+ * Membebaskan permintaan io_kiocb.
+ * Membersihkan memori yang digunakan oleh permintaan.
+ */
 __cold void io_free_req(struct io_kiocb *req)
 {
 	/* refs were already put, restore them for io_req_task_complete() */
@@ -1031,6 +1114,10 @@ static void ctx_flush_and_put(struct io_ring_ctx *ctx, io_tw_token_t tw)
 	percpu_ref_put(&ctx->refs);
 }
 
+/**
+ * Menjalankan pekerjaan task_work untuk thread saat ini.
+ * Memproses pekerjaan hingga selesai.
+ */
 /*
  * Run queued task_work, returning the number of entries processed in *count.
  * If more entries than max_entries are available, stop processing once this
@@ -1235,6 +1322,10 @@ static void io_req_normal_work_add(struct io_kiocb *req)
 	io_fallback_tw(tctx, false);
 }
 
+/**
+ * Menambahkan pekerjaan task_work ke permintaan.
+ * Digunakan untuk pekerjaan yang memerlukan penanganan tambahan.
+ */
 void __io_req_task_work_add(struct io_kiocb *req, unsigned flags)
 {
 	if (req->ctx->flags & IORING_SETUP_DEFER_TASKRUN)
@@ -1376,6 +1467,10 @@ void io_req_task_queue_fail(struct io_kiocb *req, int ret)
 	io_req_task_work_add(req);
 }
 
+/**
+ * Menambahkan permintaan ke antrian pekerjaan.
+ * Menjadwalkan permintaan untuk diproses.
+ */
 void io_req_task_queue(struct io_kiocb *req)
 {
 	req->io_task_work.func = io_req_task_submit;
@@ -1579,6 +1674,10 @@ static int io_iopoll_check(struct io_ring_ctx *ctx, unsigned int min_events)
 	return 0;
 }
 
+/**
+ * Menyelesaikan pekerjaan task_work untuk permintaan.
+ * Mengatur hasil dan menyelesaikan permintaan.
+ */
 void io_req_task_complete(struct io_kiocb *req, io_tw_token_t tw)
 {
 	io_req_complete_defer(req);
@@ -2310,6 +2409,10 @@ static bool io_get_sqe(struct io_ring_ctx *ctx, const struct io_uring_sqe **sqe)
 	return true;
 }
 
+/**
+ * Memproses dan mengirimkan SQE (Submission Queue Entries) ke ring.
+ * Mengembalikan jumlah SQE yang berhasil diproses.
+ */
 int io_submit_sqes(struct io_ring_ctx *ctx, unsigned int nr)
 	__must_hold(&ctx->uring_lock)
 {
@@ -2360,6 +2463,10 @@ int io_submit_sqes(struct io_ring_ctx *ctx, unsigned int nr)
 	return ret;
 }
 
+/**
+ * Fungsi wake-up untuk waitqueue io_uring.
+ * Membangunkan thread jika ada event atau pekerjaan yang perlu diproses.
+ */
 static int io_wake_function(struct wait_queue_entry *curr, unsigned int mode,
 			    int wake_flags, void *key)
 {
@@ -2374,6 +2481,10 @@ static int io_wake_function(struct wait_queue_entry *curr, unsigned int mode,
 	return -1;
 }
 
+/**
+ * Menjalankan pekerjaan task_work dengan sinyal.
+ * Memproses pekerjaan yang tertunda pada konteks io_uring.
+ */
 int io_run_task_work_sig(struct io_ring_ctx *ctx)
 {
 	if (io_local_work_pending(ctx)) {
@@ -2388,6 +2499,10 @@ int io_run_task_work_sig(struct io_ring_ctx *ctx)
 	return 0;
 }
 
+/**
+ * Mengecek apakah ada I/O yang sedang berjalan untuk thread saat ini.
+ * Mengembalikan true jika ada permintaan I/O yang belum selesai.
+ */
 static bool current_pending_io(void)
 {
 	struct io_uring_task *tctx = current->io_uring;
@@ -2397,6 +2512,10 @@ static bool current_pending_io(void)
 	return percpu_counter_read_positive(&tctx->inflight);
 }
 
+/**
+ * Callback untuk membangunkan thread setelah timeout pada CQ ring.
+ * Mengatur status timeout dan membangunkan thread yang menunggu.
+ */
 static enum hrtimer_restart io_cqring_timer_wakeup(struct hrtimer *timer)
 {
 	struct io_wait_queue *iowq = container_of(timer, struct io_wait_queue, t);
@@ -2407,6 +2526,10 @@ static enum hrtimer_restart io_cqring_timer_wakeup(struct hrtimer *timer)
 	return HRTIMER_NORESTART;
 }
 
+/**
+ * Callback untuk membangunkan thread setelah timeout minimum pada CQ ring.
+ * Mengatur status timeout minimum dan membangunkan thread jika diperlukan.
+ */
 /*
  * Doing min_timeout portion. If we saw any timeouts, events, or have work,
  * wake up. If not, and we have a normal timeout, switch to that and keep
@@ -2451,6 +2574,10 @@ out_wake:
 	return io_cqring_timer_wakeup(timer);
 }
 
+/**
+ * Menjadwalkan timeout untuk CQ ring.
+ * Mengatur timer untuk menunggu hingga timeout atau event terjadi.
+ */
 static int io_cqring_schedule_timeout(struct io_wait_queue *iowq,
 				      clockid_t clock_id, ktime_t start_time)
 {
@@ -2488,6 +2615,10 @@ struct ext_arg {
 	bool iowait;
 };
 
+/**
+ * Menjadwalkan penjadwalan ulang untuk menunggu CQ ring.
+ * Mengatur timeout atau menunggu hingga event tersedia.
+ */
 static int __io_cqring_wait_schedule(struct io_ring_ctx *ctx,
 				     struct io_wait_queue *iowq,
 				     struct ext_arg *ext_arg,
@@ -2510,6 +2641,10 @@ static int __io_cqring_wait_schedule(struct io_ring_ctx *ctx,
 	return ret;
 }
 
+/**
+ * Menjadwalkan ulang untuk menunggu event pada CQ ring.
+ * Memastikan bahwa thread menunggu hingga event tersedia atau timeout terjadi.
+ */
 /* If this returns > 0, the caller should retry */
 static inline int io_cqring_wait_schedule(struct io_ring_ctx *ctx,
 					  struct io_wait_queue *iowq,
@@ -2530,6 +2665,10 @@ static inline int io_cqring_wait_schedule(struct io_ring_ctx *ctx,
 	return __io_cqring_wait_schedule(ctx, iowq, ext_arg, start_time);
 }
 
+/**
+ * Menunggu hingga event tersedia di CQ ring.
+ * Memproses pekerjaan lokal dan menangani timeout jika diperlukan.
+ */
 /*
  * Wait until events become available, if we don't already have some. The
  * application must reap them itself, as they reside on the shared cq ring.
@@ -2659,6 +2798,10 @@ static int io_cqring_wait(struct io_ring_ctx *ctx, int min_events, u32 flags,
 	return READ_ONCE(rings->cq.head) == READ_ONCE(rings->cq.tail) ? ret : 0;
 }
 
+/**
+ * Membebaskan memori yang digunakan oleh ring buffer.
+ * Membersihkan semua alokasi terkait SQ dan CQ ring.
+ */
 static void io_rings_free(struct io_ring_ctx *ctx)
 {
 	io_free_region(ctx, &ctx->sq_region);
@@ -2667,6 +2810,10 @@ static void io_rings_free(struct io_ring_ctx *ctx)
 	ctx->sq_sqes = NULL;
 }
 
+/**
+ * Menghitung ukuran ring buffer berdasarkan parameter.
+ * Mengembalikan ukuran total ring buffer.
+ */
 unsigned long rings_size(unsigned int flags, unsigned int sq_entries,
 			 unsigned int cq_entries, size_t *sq_offset)
 {
@@ -2704,6 +2851,10 @@ unsigned long rings_size(unsigned int flags, unsigned int sq_entries,
 	return off;
 }
 
+/**
+ * Membebaskan cache permintaan untuk io_uring.
+ * Membersihkan semua permintaan yang tidak digunakan.
+ */
 static void io_req_caches_free(struct io_ring_ctx *ctx)
 {
 	struct io_kiocb *req;
@@ -2721,6 +2872,10 @@ static void io_req_caches_free(struct io_ring_ctx *ctx)
 	mutex_unlock(&ctx->uring_lock);
 }
 
+/**
+ * Membebaskan dan menghentikan konteks io_ring_ctx.
+ * Memastikan semua pekerjaan selesai sebelum membebaskan sumber daya.
+ */
 static __cold void io_ring_ctx_free(struct io_ring_ctx *ctx)
 {
 	io_sq_thread_finish(ctx);
@@ -2762,6 +2917,10 @@ static __cold void io_ring_ctx_free(struct io_ring_ctx *ctx)
 	kfree(ctx);
 }
 
+/**
+ * Callback untuk mengaktifkan polling pada waitqueue.
+ * Mengatur status polling sebagai aktif dan membangunkan semua thread yang menunggu.
+ */
 static __cold void io_activate_pollwq_cb(struct callback_head *cb)
 {
 	struct io_ring_ctx *ctx = container_of(cb, struct io_ring_ctx,
@@ -2779,6 +2938,10 @@ static __cold void io_activate_pollwq_cb(struct callback_head *cb)
 	percpu_ref_put(&ctx->refs);
 }
 
+/**
+ * Mengaktifkan polling untuk waitqueue.
+ * Memastikan waitqueue siap untuk digunakan.
+ */
 __cold void io_activate_pollwq(struct io_ring_ctx *ctx)
 {
 	spin_lock(&ctx->completion_lock);
@@ -2801,6 +2964,10 @@ out:
 	spin_unlock(&ctx->completion_lock);
 }
 
+/**
+ * Menangani operasi polling untuk file io_uring.
+ * Mengembalikan status polling berdasarkan kondisi ring buffer.
+ */
 static __poll_t io_uring_poll(struct file *file, poll_table *wait)
 {
 	struct io_ring_ctx *ctx = file->private_data;
@@ -2843,6 +3010,10 @@ struct io_tctx_exit {
 	struct io_ring_ctx		*ctx;
 };
 
+/**
+ * Callback untuk menangani keluarnya konteks tugas io_uring.
+ * Menghapus node konteks tugas dari daftar dan menyelesaikan pekerjaan.
+ */
 static __cold void io_tctx_exit_cb(struct callback_head *cb)
 {
 	struct io_uring_task *tctx = current->io_uring;
@@ -2860,6 +3031,10 @@ static __cold void io_tctx_exit_cb(struct callback_head *cb)
 	complete(&work->completion);
 }
 
+/**
+ * Callback untuk membatalkan pekerjaan yang terkait dengan konteks tertentu.
+ * Mengembalikan true jika pekerjaan cocok dengan konteks yang diberikan.
+ */
 static __cold bool io_cancel_ctx_cb(struct io_wq_work *work, void *data)
 {
 	struct io_kiocb *req = container_of(work, struct io_kiocb, work);
@@ -2867,6 +3042,10 @@ static __cold bool io_cancel_ctx_cb(struct io_wq_work *work, void *data)
 	return req->ctx == data;
 }
 
+/**
+ * Menangani pekerjaan keluar untuk io_ring_ctx.
+ * Membersihkan semua sumber daya yang terkait dengan konteks io_uring.
+ */
 static __cold void io_ring_exit_work(struct work_struct *work)
 {
 	struct io_ring_ctx *ctx = container_of(work, struct io_ring_ctx, exit_work);
@@ -2968,6 +3147,10 @@ static __cold void io_ring_exit_work(struct work_struct *work)
 	io_ring_ctx_free(ctx);
 }
 
+/**
+ * Membebaskan dan menghentikan konteks io_ring_ctx.
+ * Memastikan semua pekerjaan selesai sebelum membebaskan sumber daya.
+ */
 static __cold void io_ring_ctx_wait_and_kill(struct io_ring_ctx *ctx)
 {
 	unsigned long index;
@@ -2991,6 +3174,10 @@ static __cold void io_ring_ctx_wait_and_kill(struct io_ring_ctx *ctx)
 	queue_work(iou_wq, &ctx->exit_work);
 }
 
+/**
+ * Menangani pelepasan file descriptor io_uring.
+ * Membebaskan semua sumber daya yang terkait dengan file descriptor.
+ */
 static int io_uring_release(struct inode *inode, struct file *file)
 {
 	struct io_ring_ctx *ctx = file->private_data;
@@ -3005,6 +3192,10 @@ struct io_task_cancel {
 	bool all;
 };
 
+/**
+ * Callback untuk membatalkan pekerjaan yang terkait dengan tugas tertentu.
+ * Mengembalikan true jika pekerjaan cocok untuk dibatalkan.
+ */
 static bool io_cancel_task_cb(struct io_wq_work *work, void *data)
 {
 	struct io_kiocb *req = container_of(work, struct io_kiocb, work);
@@ -3013,6 +3204,10 @@ static bool io_cancel_task_cb(struct io_wq_work *work, void *data)
 	return io_match_task_safe(req, cancel->tctx, cancel->all);
 }
 
+/**
+ * Membatalkan pekerjaan yang ditunda pada file tertentu.
+ * Mengembalikan true jika ada pekerjaan yang dibatalkan.
+ */
 static __cold bool io_cancel_defer_files(struct io_ring_ctx *ctx,
 					 struct io_uring_task *tctx,
 					 bool cancel_all)
@@ -3040,6 +3235,10 @@ static __cold bool io_cancel_defer_files(struct io_ring_ctx *ctx,
 	return true;
 }
 
+/**
+ * Mencoba membatalkan pekerjaan yang sedang berjalan di io_wq.
+ * Mengembalikan true jika ada pekerjaan yang dibatalkan.
+ */
 static __cold bool io_uring_try_cancel_iowq(struct io_ring_ctx *ctx)
 {
 	struct io_tctx_node *node;
@@ -3064,6 +3263,10 @@ static __cold bool io_uring_try_cancel_iowq(struct io_ring_ctx *ctx)
 	return ret;
 }
 
+/**
+ * Mencoba membatalkan semua permintaan yang terkait dengan konteks io_uring.
+ * Mengembalikan true jika ada pekerjaan yang dibatalkan.
+ */
 static __cold bool io_uring_try_cancel_requests(struct io_ring_ctx *ctx,
 						struct io_uring_task *tctx,
 						bool cancel_all,
@@ -3123,6 +3326,11 @@ static __cold bool io_uring_try_cancel_requests(struct io_ring_ctx *ctx,
 	return ret;
 }
 
+/**
+ * Menghitung jumlah permintaan yang sedang berjalan untuk tugas io_uring.
+ * Jika `tracked` adalah true, hanya menghitung permintaan yang dilacak.
+ * Mengembalikan jumlah permintaan yang sedang berjalan.
+ */
 static s64 tctx_inflight(struct io_uring_task *tctx, bool tracked)
 {
 	if (tracked)
@@ -3130,6 +3338,10 @@ static s64 tctx_inflight(struct io_uring_task *tctx, bool tracked)
 	return percpu_counter_sum(&tctx->inflight);
 }
 
+/**
+ * Membatalkan semua permintaan yang terkait dengan tugas io_uring.
+ * Digunakan untuk membatalkan permintaan saat tugas keluar atau dieksekusi ulang.
+ */
 /*
  * Find any io_uring ctx that this task has registered or done IO on, and cancel
  * requests. @sqd should be not-null IFF it's an SQPOLL thread cancellation.
@@ -3219,12 +3431,20 @@ end_wait:
 	}
 }
 
+/**
+ * Membatalkan semua permintaan io_uring untuk tugas saat ini.
+ * Digunakan saat tugas keluar atau dieksekusi ulang.
+ */
 void __io_uring_cancel(bool cancel_all)
 {
 	io_uring_unreg_ringfd();
 	io_uring_cancel_generic(cancel_all, NULL);
 }
 
+/**
+ * Mendapatkan argumen ekstensi terdaftar dari pengguna.
+ * Memvalidasi dan mengembalikan pointer ke struktur argumen.
+ */
 static struct io_uring_reg_wait *io_get_ext_arg_reg(struct io_ring_ctx *ctx,
 			const struct io_uring_getevents_arg __user *uarg)
 {
@@ -3244,6 +3464,11 @@ static struct io_uring_reg_wait *io_get_ext_arg_reg(struct io_ring_ctx *ctx,
 	return ctx->cq_wait_arg + offset;
 }
 
+/**
+ * Memvalidasi argumen ekstensi untuk io_uring.
+ * Memastikan bahwa argumen sesuai dengan ukuran dan format yang diharapkan.
+ * Mengembalikan 0 jika valid, atau kode kesalahan jika tidak valid.
+ */
 static int io_validate_ext_arg(struct io_ring_ctx *ctx, unsigned flags,
 			       const void __user *argp, size_t argsz)
 {
@@ -3260,6 +3485,11 @@ static int io_validate_ext_arg(struct io_ring_ctx *ctx, unsigned flags,
 	return 0;
 }
 
+/**
+ * Mendapatkan argumen ekstensi untuk io_uring.
+ * Memproses dan memvalidasi argumen tambahan seperti timespec dan sigset.
+ * Mengembalikan 0 jika berhasil, atau kode kesalahan jika gagal.
+ */
 static int io_get_ext_arg(struct io_ring_ctx *ctx, unsigned flags,
 			  const void __user *argp, struct ext_arg *ext_arg)
 {
@@ -3333,6 +3563,10 @@ uaccess_end:
 #endif
 }
 
+/**
+ * Menangani syscall io_uring_enter.
+ * Memproses permintaan yang dikirimkan oleh aplikasi.
+ */
 SYSCALL_DEFINE6(io_uring_enter, unsigned int, fd, u32, to_submit,
 		u32, min_complete, u32, flags, const void __user *, argp,
 		size_t, argsz)
@@ -3461,6 +3695,10 @@ out:
 	return ret;
 }
 
+/**
+ * Struktur operasi file untuk io_uring.
+ * Menangani operasi seperti release, mmap, poll, dan lainnya.
+ */
 static const struct file_operations io_uring_fops = {
 	.release	= io_uring_release,
 	.mmap		= io_uring_mmap,
@@ -3474,6 +3712,10 @@ static const struct file_operations io_uring_fops = {
 #endif
 };
 
+/**
+ * Mengecek apakah file memiliki operasi file io_uring.
+ * Mengembalikan true jika file menggunakan operasi file io_uring.
+ */
 bool io_is_uring_fops(struct file *file)
 {
 	return file->f_op == &io_uring_fops;
@@ -3538,6 +3780,10 @@ static __cold int io_allocate_scq_urings(struct io_ring_ctx *ctx,
 	return 0;
 }
 
+/**
+ * Menginstal file descriptor untuk io_uring.
+ * Mengembalikan file descriptor baru atau kode kesalahan jika gagal.
+ */
 static int io_uring_install_fd(struct file *file)
 {
 	int fd;
@@ -3549,6 +3795,10 @@ static int io_uring_install_fd(struct file *file)
 	return fd;
 }
 
+/**
+ * Membuat file anonim untuk io_uring.
+ * Digunakan sebagai backing untuk instance io_uring.
+ */
 /*
  * Allocate an anonymous fd, this is what constitutes the application
  * visible backing of an io_uring instance. The application mmaps this
@@ -3561,6 +3811,10 @@ static struct file *io_uring_get_file(struct io_ring_ctx *ctx)
 					 O_RDWR | O_CLOEXEC, NULL);
 }
 
+/**
+ * Memvalidasi dan menyesuaikan parameter io_uring.
+ * Memastikan parameter sesuai dengan batasan yang diizinkan.
+ */
 static int io_uring_sanitise_params(struct io_uring_params *p)
 {
 	unsigned flags = p->flags;
@@ -3599,6 +3853,10 @@ static int io_uring_sanitise_params(struct io_uring_params *p)
 	return 0;
 }
 
+/**
+ * Mengisi parameter io_uring.
+ * Mengatur nilai default untuk parameter io_uring.
+ */
 int io_uring_fill_params(unsigned entries, struct io_uring_params *p)
 {
 	if (!entries)
@@ -3662,6 +3920,10 @@ int io_uring_fill_params(unsigned entries, struct io_uring_params *p)
 	return 0;
 }
 
+/**
+ * Membuat instance io_uring baru.
+ * Mengatur ring buffer dan struktur data terkait.
+ */
 static __cold int io_uring_create(unsigned entries, struct io_uring_params *p,
 				  struct io_uring_params __user *params)
 {
@@ -3797,6 +4059,11 @@ err_fput:
 	return ret;
 }
 
+/**
+ * Mengatur konteks io_uring dan mengembalikan file descriptor.
+ * Aplikasi meminta ukuran ring, dan kernel mengembalikan ukuran SQ/CQ ring
+ * yang sebenarnya (bersama dengan parameter lainnya) dalam struktur params.
+ */
 /*
  * Sets up an aio uring context, and returns the fd. Applications asks for a
  * ring size, we return the actual sq/cq ring sizes (among other things) in the
@@ -3828,17 +4095,25 @@ static long io_uring_setup(u32 entries, struct io_uring_params __user *params)
 	return io_uring_create(entries, &p, params);
 }
 
+/**
+ * Mengecek apakah penggunaan io_uring diizinkan.
+ * Memvalidasi pengaturan sistem dan izin pengguna.
+ * Mengembalikan 0 jika diizinkan, atau kode kesalahan jika tidak.
+ */
 static inline int io_uring_allowed(void)
 {
 	int disabled = READ_ONCE(sysctl_io_uring_disabled);
 	kgid_t io_uring_group;
 
+	/* Jika io_uring dinonaktifkan sepenuhnya */
 	if (disabled == 2)
 		return -EPERM;
 
+	/* Jika io_uring diaktifkan atau pengguna memiliki CAP_SYS_ADMIN */
 	if (disabled == 0 || capable(CAP_SYS_ADMIN))
 		goto allowed_lsm;
 
+	/* Validasi grup pengguna jika io_uring hanya diizinkan untuk grup tertentu */
 	io_uring_group = make_kgid(&init_user_ns, sysctl_io_uring_group);
 	if (!gid_valid(io_uring_group))
 		return -EPERM;
@@ -3850,6 +4125,10 @@ allowed_lsm:
 	return security_uring_allowed();
 }
 
+/**
+ * Menangani syscall io_uring_setup.
+ * Mengatur ring buffer dan mengembalikan file descriptor.
+ */
 SYSCALL_DEFINE2(io_uring_setup, u32, entries,
 		struct io_uring_params __user *, params)
 {
@@ -3862,6 +4141,10 @@ SYSCALL_DEFINE2(io_uring_setup, u32, entries,
 	return io_uring_setup(entries, params);
 }
 
+/**
+ * Inisialisasi modul io_uring.
+ * Mengatur cache dan struktur data global.
+ */
 static int __init io_uring_init(void)
 {
 	struct kmem_cache_args kmem_args = {
