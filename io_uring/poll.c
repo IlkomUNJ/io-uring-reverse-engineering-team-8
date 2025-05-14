@@ -58,6 +58,10 @@ static int io_poll_wake(struct wait_queue_entry *wait, unsigned mode, int sync,
 
 static inline struct io_kiocb *wqe_to_req(struct wait_queue_entry *wqe)
 {
+	/**
+	 * Mengkonversi wait queue entry ke io_kiocb request.
+	 * Menghapus flag dari pointer private untuk mendapatkan alamat request.
+	 */
 	unsigned long priv = (unsigned long)wqe->private;
 
 	return (struct io_kiocb *)(priv & ~IO_WQE_F_DOUBLE);
@@ -65,6 +69,10 @@ static inline struct io_kiocb *wqe_to_req(struct wait_queue_entry *wqe)
 
 static inline bool wqe_is_double(struct wait_queue_entry *wqe)
 {
+	/**
+	 * Memeriksa apakah wait queue entry adalah tipe double.
+	 * Menggunakan bitflag pada pointer private untuk mengetahui statusnya.
+	 */
 	unsigned long priv = (unsigned long)wqe->private;
 
 	return priv & IO_WQE_F_DOUBLE;
@@ -72,6 +80,10 @@ static inline bool wqe_is_double(struct wait_queue_entry *wqe)
 
 static bool io_poll_get_ownership_slowpath(struct io_kiocb *req)
 {
+	/**
+	 * Jalur lambat untuk mendapatkan kepemilikan poll request.
+	 * Menangani kasus di mana terjadi konflik akses atau flag retry perlu diatur.
+	 */
 	int v;
 
 	/*
@@ -93,6 +105,10 @@ static bool io_poll_get_ownership_slowpath(struct io_kiocb *req)
  */
 static inline bool io_poll_get_ownership(struct io_kiocb *req)
 {
+	/**
+	 * Mendapatkan kepemilikan eksklusif atas poll request.
+	 * Menggunakan atomik untuk memastikan hanya satu thread yang mengakses request.
+	 */
 	if (unlikely(atomic_read(&req->poll_refs) >= IO_POLL_REF_BIAS))
 		return io_poll_get_ownership_slowpath(req);
 	return !(atomic_fetch_inc(&req->poll_refs) & IO_POLL_REF_MASK);
@@ -100,11 +116,19 @@ static inline bool io_poll_get_ownership(struct io_kiocb *req)
 
 static void io_poll_mark_cancelled(struct io_kiocb *req)
 {
+	/**
+	 * Menandai poll request sebagai dibatalkan.
+	 * Mengatur flag pembatalan pada referensi poll atomik.
+	 */
 	atomic_or(IO_POLL_CANCEL_FLAG, &req->poll_refs);
 }
 
 static struct io_poll *io_poll_get_double(struct io_kiocb *req)
 {
+	/**
+	 * Mengambil struktur io_poll untuk double poll.
+	 * Lokasi struktur berbeda bergantung pada tipe operasi poll.
+	 */
 	/* pure poll stashes this in ->async_data, poll driven retry elsewhere */
 	if (req->opcode == IORING_OP_POLL_ADD)
 		return req->async_data;
@@ -113,6 +137,10 @@ static struct io_poll *io_poll_get_double(struct io_kiocb *req)
 
 static struct io_poll *io_poll_get_single(struct io_kiocb *req)
 {
+	/**
+	 * Mengambil struktur io_poll untuk single poll.
+	 * Lokasi struktur berbeda bergantung pada tipe operasi poll.
+	 */
 	if (req->opcode == IORING_OP_POLL_ADD)
 		return io_kiocb_to_cmd(req, struct io_poll);
 	return &req->apoll->poll;
@@ -120,6 +148,10 @@ static struct io_poll *io_poll_get_single(struct io_kiocb *req)
 
 static void io_poll_req_insert(struct io_kiocb *req)
 {
+	/**
+	 * Menyisipkan poll request ke dalam tabel hash.
+	 * Memungkinkan pencarian cepat request berdasarkan user_data.
+	 */
 	struct io_hash_table *table = &req->ctx->cancel_table;
 	u32 index = hash_long(req->cqe.user_data, table->hash_bits);
 
@@ -130,6 +162,10 @@ static void io_poll_req_insert(struct io_kiocb *req)
 
 static void io_init_poll_iocb(struct io_poll *poll, __poll_t events)
 {
+	/**
+	 * Menginisialisasi struktur io_poll untuk operasi poll.
+	 * Menyiapkan events mask dan wait queue entry.
+	 */
 	poll->head = NULL;
 #define IO_POLL_UNMASK	(EPOLLERR|EPOLLHUP|EPOLLNVAL|EPOLLRDHUP)
 	/* mask in events that we always want/need */
@@ -140,6 +176,10 @@ static void io_init_poll_iocb(struct io_poll *poll, __poll_t events)
 
 static inline void io_poll_remove_entry(struct io_poll *poll)
 {
+	/**
+	 * Menghapus entry poll dari wait queue.
+	 * Memastikan penghapusan yang aman dengan penguncian.
+	 */
 	struct wait_queue_head *head = smp_load_acquire(&poll->head);
 
 	if (head) {
@@ -152,6 +192,10 @@ static inline void io_poll_remove_entry(struct io_poll *poll)
 
 static void io_poll_remove_entries(struct io_kiocb *req)
 {
+	/**
+	 * Menghapus semua poll entries terkait dengan request.
+	 * Menangani baik single poll maupun double poll dengan aman.
+	 */
 	/*
 	 * Nothing to do if neither of those flags are set. Avoid dipping
 	 * into the poll/apoll/double cachelines if we can.
@@ -192,6 +236,10 @@ enum {
 
 static void __io_poll_execute(struct io_kiocb *req, int mask)
 {
+	/**
+	 * Mengeksekusi poll request dengan mask hasil.
+	 * Menjadwalkan task work untuk menyelesaikan request.
+	 */
 	unsigned flags = 0;
 
 	io_req_set_res(req, mask, 0);
@@ -206,6 +254,10 @@ static void __io_poll_execute(struct io_kiocb *req, int mask)
 
 static inline void io_poll_execute(struct io_kiocb *req, int res)
 {
+	/**
+	 * Membantu untuk mengeksekusi poll request jika bisa mendapatkan kepemilikan.
+	 * Wrapper yang aman untuk __io_poll_execute.
+	 */
 	if (io_poll_get_ownership(req))
 		__io_poll_execute(req, res);
 }
@@ -837,6 +889,10 @@ static __poll_t io_poll_parse_events(const struct io_uring_sqe *sqe,
 
 int io_poll_remove_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 {
+	/**
+	 * Mempersiapkan operasi poll_remove.
+	 * Menyiapkan data untuk menghapus atau memperbarui poll request.
+	 */
 	struct io_poll_update *upd = io_kiocb_to_cmd(req, struct io_poll_update);
 	u32 flags;
 
@@ -867,6 +923,10 @@ int io_poll_remove_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 
 int io_poll_add_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 {
+	/**
+	 * Mempersiapkan operasi poll_add.
+	 * Mengekstrak dan memvalidasi parameter polling dari SQE.
+	 */
 	struct io_poll *poll = io_kiocb_to_cmd(req, struct io_poll);
 	u32 flags;
 
@@ -884,8 +944,13 @@ int io_poll_add_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 
 int io_poll_add(struct io_kiocb *req, unsigned int issue_flags)
 {
+	/**
+	 * Mengeksekusi operasi poll_add.
+	 * Mendaftarkan request untuk memantau events pada file.
+	 */
 	struct io_poll *poll = io_kiocb_to_cmd(req, struct io_poll);
 	struct io_poll_table ipt;
+	__poll_t mask;
 	int ret;
 
 	ipt.pt._qproc = io_poll_queue_proc;
@@ -900,6 +965,10 @@ int io_poll_add(struct io_kiocb *req, unsigned int issue_flags)
 
 int io_poll_remove(struct io_kiocb *req, unsigned int issue_flags)
 {
+	/**
+	 * Mengeksekusi operasi poll_remove.
+	 * Menghapus atau memperbarui registrasi poll yang ada.
+	 */
 	struct io_poll_update *poll_update = io_kiocb_to_cmd(req, struct io_poll_update);
 	struct io_ring_ctx *ctx = req->ctx;
 	struct io_cancel_data cd = { .ctx = ctx, .data = poll_update->old_user_data, };

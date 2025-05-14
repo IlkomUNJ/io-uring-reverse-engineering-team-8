@@ -21,6 +21,10 @@ struct io_napi_entry {
 static struct io_napi_entry *io_napi_hash_find(struct hlist_head *hash_list,
 					       unsigned int napi_id)
 {
+	/**
+     * Cari entri dalam hash list berdasarkan napi_id.
+     * Mengembalikan entri jika ditemukan, atau NULL jika tidak ada.
+     */
 	struct io_napi_entry *e;
 
 	hlist_for_each_entry_rcu(e, hash_list, node) {
@@ -34,12 +38,20 @@ static struct io_napi_entry *io_napi_hash_find(struct hlist_head *hash_list,
 
 static inline ktime_t net_to_ktime(unsigned long t)
 {
+	/**
+     * Konversi waktu napi dalam mikrodetik ke ktime.
+     * Menggeser nilai input untuk mencocokkan nanodetik.
+     */
 	/* napi approximating usecs, reverse busy_loop_current_time */
 	return ns_to_ktime(t << 10);
 }
 
 int __io_napi_add_id(struct io_ring_ctx *ctx, unsigned int napi_id)
 {
+	/**
+     * Tambahkan napi_id ke dalam konteks io_uring.
+     * Mengembalikan 0 jika berhasil, atau kode kesalahan jika gagal.
+     */
 	struct hlist_head *hash_list;
 	struct io_napi_entry *e;
 
@@ -83,6 +95,10 @@ int __io_napi_add_id(struct io_ring_ctx *ctx, unsigned int napi_id)
 
 static int __io_napi_del_id(struct io_ring_ctx *ctx, unsigned int napi_id)
 {
+	/**
+     * Hapus napi_id dari konteks io_uring.
+     * Mengembalikan 0 jika berhasil, atau kode kesalahan jika gagal.
+     */
 	struct hlist_head *hash_list;
 	struct io_napi_entry *e;
 
@@ -104,6 +120,10 @@ static int __io_napi_del_id(struct io_ring_ctx *ctx, unsigned int napi_id)
 
 static void __io_napi_remove_stale(struct io_ring_ctx *ctx)
 {
+	/**
+     * Hapus entri yang sudah kedaluwarsa dari daftar napi.
+     * Entri dianggap kedaluwarsa jika waktu timeout-nya habis.
+     */
 	struct io_napi_entry *e;
 
 	guard(spinlock)(&ctx->napi_lock);
@@ -124,6 +144,10 @@ static void __io_napi_remove_stale(struct io_ring_ctx *ctx)
 
 static inline void io_napi_remove_stale(struct io_ring_ctx *ctx, bool is_stale)
 {
+	/**
+	 * Hapus entri yang sudah kedaluwarsa dari daftar napi.
+	 * Jika ada entri yang kedaluwarsa, panggil fungsi __io_napi_remove_stale.
+	 */
 	if (is_stale)
 		__io_napi_remove_stale(ctx);
 }
@@ -131,6 +155,10 @@ static inline void io_napi_remove_stale(struct io_ring_ctx *ctx, bool is_stale)
 static inline bool io_napi_busy_loop_timeout(ktime_t start_time,
 					     ktime_t bp)
 {
+	/**
+     * Periksa apakah waktu timeout busy poll telah tercapai.
+     * Mengembalikan true jika timeout habis, false jika tidak.
+     */
 	if (bp) {
 		ktime_t end_time = ktime_add(start_time, bp);
 		ktime_t now = net_to_ktime(busy_loop_current_time());
@@ -144,6 +172,10 @@ static inline bool io_napi_busy_loop_timeout(ktime_t start_time,
 static bool io_napi_busy_loop_should_end(void *data,
 					 unsigned long start_time)
 {
+	/**
+     * Tentukan apakah busy loop harus dihentikan.
+     * Memeriksa sinyal, pekerjaan, atau kondisi timeout.
+     */
 	struct io_wait_queue *iowq = data;
 
 	if (signal_pending(current))
@@ -177,6 +209,10 @@ dynamic_tracking_do_busy_loop(struct io_ring_ctx *ctx,
 			      bool (*loop_end)(void *, unsigned long),
 			      void *loop_end_arg)
 {
+	/**
+	 * Lakukan busy loop pada napi yang terdaftar.
+	 * Periksa apakah ada entri yang sudah kedaluwarsa.
+	 */
 	struct io_napi_entry *e;
 	bool is_stale = false;
 
@@ -196,6 +232,11 @@ __io_napi_do_busy_loop(struct io_ring_ctx *ctx,
 		       bool (*loop_end)(void *, unsigned long),
 		       void *loop_end_arg)
 {
+	/**
+	 * Lakukan busy loop pada napi yang terdaftar.
+	 * Pilih antara static_tracking_do_busy_loop atau
+	 * dynamic_tracking_do_busy_loop berdasarkan mode pelacakan.
+	 */
 	if (READ_ONCE(ctx->napi_track_mode) == IO_URING_NAPI_TRACKING_STATIC)
 		return static_tracking_do_busy_loop(ctx, loop_end, loop_end_arg);
 	return dynamic_tracking_do_busy_loop(ctx, loop_end, loop_end_arg);
@@ -204,6 +245,10 @@ __io_napi_do_busy_loop(struct io_ring_ctx *ctx,
 static void io_napi_blocking_busy_loop(struct io_ring_ctx *ctx,
 				       struct io_wait_queue *iowq)
 {
+	/**
+	 * Lakukan busy loop pada napi yang terdaftar.
+	 * Jika ada entri yang sudah kedaluwarsa, hapus entri tersebut.
+	 */
 	unsigned long start_time = busy_loop_current_time();
 	bool (*loop_end)(void *, unsigned long) = NULL;
 	void *loop_end_arg = NULL;
@@ -263,6 +308,13 @@ void io_napi_free(struct io_ring_ctx *ctx)
 	INIT_LIST_HEAD_RCU(&ctx->napi_list);
 }
 
+/*
+ * io_napi_register_napi() - Register napi with io-uring
+ * @ctx: pointer to io-uring context structure
+ * @napi: pointer to io_uring_napi structure
+ *
+ * Register napi in the io-uring context.
+ */
 static int io_napi_register_napi(struct io_ring_ctx *ctx,
 				 struct io_uring_napi *napi)
 {

@@ -28,6 +28,7 @@
 
 #define IO_DMA_ATTR (DMA_ATTR_SKIP_CPU_SYNC | DMA_ATTR_WEAK_ORDERING)
 
+// Unmaps a zero-copy receive area from the device.
 static void __io_zcrx_unmap_area(struct io_zcrx_ifq *ifq,
 				 struct io_zcrx_area *area, int nr_mapped)
 {
@@ -44,12 +45,14 @@ static void __io_zcrx_unmap_area(struct io_zcrx_ifq *ifq,
 	}
 }
 
+// Unmaps a zero-copy receive area if it is currently mapped.
 static void io_zcrx_unmap_area(struct io_zcrx_ifq *ifq, struct io_zcrx_area *area)
 {
 	if (area->is_mapped)
 		__io_zcrx_unmap_area(ifq, area, area->nia.num_niovs);
 }
 
+// Maps a zero-copy receive area to the device.
 static int io_zcrx_map_area(struct io_zcrx_ifq *ifq, struct io_zcrx_area *area)
 {
 	int i;
@@ -78,6 +81,7 @@ static int io_zcrx_map_area(struct io_zcrx_ifq *ifq, struct io_zcrx_area *area)
 	return 0;
 }
 
+// Synchronizes a net_iov for device access.
 static void io_zcrx_sync_for_device(const struct page_pool *pool,
 				    struct net_iov *niov)
 {
@@ -106,6 +110,7 @@ struct io_zcrx_args {
 
 static const struct memory_provider_ops io_uring_pp_zc_ops;
 
+// Fungsi io_zcrx_iov_to_area digunakan untuk mendapatkan pointer ke struktur io_zcrx_area yang memiliki sebuah net_iov
 static inline struct io_zcrx_area *io_zcrx_iov_to_area(const struct net_iov *niov)
 {
 	struct net_iov_area *owner = net_iov_owner(niov);
@@ -113,6 +118,7 @@ static inline struct io_zcrx_area *io_zcrx_iov_to_area(const struct net_iov *nio
 	return container_of(owner, struct io_zcrx_area, nia);
 }
 
+// Fungsi io_get_user_counter digunakan untuk mendapatkan pointer ke counter referensi pengguna (user_refs)
 static inline atomic_t *io_get_user_counter(struct net_iov *niov)
 {
 	struct io_zcrx_area *area = io_zcrx_iov_to_area(niov);
@@ -120,6 +126,7 @@ static inline atomic_t *io_get_user_counter(struct net_iov *niov)
 	return &area->user_refs[net_iov_idx(niov)];
 }
 
+// Fungsi io_zcrx_put_niov_uref digunakan untuk mengurangi referensi pengguna (user reference) pada sebuah net_iov 
 static bool io_zcrx_put_niov_uref(struct net_iov *niov)
 {
 	atomic_t *uref = io_get_user_counter(niov);
@@ -130,11 +137,13 @@ static bool io_zcrx_put_niov_uref(struct net_iov *niov)
 	return true;
 }
 
+// Fungsi io_zcrx_get_niov_uref digunakan untuk menambah referensi pengguna (user reference) pada sebuah net_iov 
 static void io_zcrx_get_niov_uref(struct net_iov *niov)
 {
 	atomic_inc(io_get_user_counter(niov));
 }
 
+// Mendapatkan pointer ke struktur page yang terkait dengan net_iov
 static inline struct page *io_zcrx_iov_page(const struct net_iov *niov)
 {
 	struct io_zcrx_area *area = io_zcrx_iov_to_area(niov);
@@ -142,6 +151,7 @@ static inline struct page *io_zcrx_iov_page(const struct net_iov *niov)
 	return area->pages[net_iov_idx(niov)];
 }
 
+// Mengalokasikan ring buffer (rbuf) untuk zero-copy receive interface queue (ifq).
 static int io_allocate_rbuf_ring(struct io_zcrx_ifq *ifq,
 				 struct io_uring_zcrx_ifq_reg *reg,
 				 struct io_uring_region_desc *rd)
@@ -166,6 +176,9 @@ static int io_allocate_rbuf_ring(struct io_zcrx_ifq *ifq,
 	return 0;
 }
 
+/**
+ * Mengisi ulang ring buffer (rbuf) yang sebelumnya dialokasikan untuk zero-copy receive interface queue (ifq).
+ */
 static void io_free_rbuf_ring(struct io_zcrx_ifq *ifq)
 {
 	io_free_region(ifq->ctx, &ifq->ctx->zcrx_region);
@@ -173,6 +186,9 @@ static void io_free_rbuf_ring(struct io_zcrx_ifq *ifq)
 	ifq->rqes = NULL;
 }
 
+/**
+ * Membebaskan semua sumber daya yang terkait dengan sebuah area zero-copy receive (io_zcrx_area).
+ */
 static void io_zcrx_free_area(struct io_zcrx_area *area)
 {
 	io_zcrx_unmap_area(area->ifq, area);
@@ -187,6 +203,9 @@ static void io_zcrx_free_area(struct io_zcrx_area *area)
 	kfree(area);
 }
 
+/**
+ * Membuat area zero-copy receive (io_zcrx_area) baru untuk interface queue (ifq).
+ */
 static int io_zcrx_create_area(struct io_zcrx_ifq *ifq,
 			       struct io_zcrx_area **res,
 			       struct io_uring_zcrx_area_reg *area_reg)
@@ -262,6 +281,9 @@ err:
 	return ret;
 }
 
+/**
+ * Mengalokasikan zero-copy receive interface queue (ifq).
+ */
 static struct io_zcrx_ifq *io_zcrx_ifq_alloc(struct io_ring_ctx *ctx)
 {
 	struct io_zcrx_ifq *ifq;
@@ -277,6 +299,9 @@ static struct io_zcrx_ifq *io_zcrx_ifq_alloc(struct io_ring_ctx *ctx)
 	return ifq;
 }
 
+/**
+ * Melepaskan referensi ke perangkat jaringan (netdev) yang terkait dengan zero-copy receive interface queue (ifq).
+ */
 static void io_zcrx_drop_netdev(struct io_zcrx_ifq *ifq)
 {
 	spin_lock(&ifq->lock);
@@ -287,6 +312,9 @@ static void io_zcrx_drop_netdev(struct io_zcrx_ifq *ifq)
 	spin_unlock(&ifq->lock);
 }
 
+/**
+ * Menutup antrean penerimaan (if_rxq) yang terkait dengan zero-copy receive interface queue (ifq).
+ */
 static void io_close_queue(struct io_zcrx_ifq *ifq)
 {
 	struct net_device *netdev;
@@ -312,6 +340,9 @@ static void io_close_queue(struct io_zcrx_ifq *ifq)
 	ifq->if_rxq = -1;
 }
 
+/**
+ * Membebaskan zero-copy receive interface queue (ifq).
+ */
 static void io_zcrx_ifq_free(struct io_zcrx_ifq *ifq)
 {
 	io_close_queue(ifq);
@@ -326,6 +357,9 @@ static void io_zcrx_ifq_free(struct io_zcrx_ifq *ifq)
 	kfree(ifq);
 }
 
+/**
+ * Mendaftarkan zero-copy receive interface queue (ifq) ke dalam konteks io_uring.
+ */
 int io_register_zcrx_ifq(struct io_ring_ctx *ctx,
 			  struct io_uring_zcrx_ifq_reg __user *arg)
 {
@@ -421,6 +455,9 @@ err:
 	return ret;
 }
 
+/**
+ * Membatalkan pendaftaran zero-copy receive interface queue dari konteks io_uring.
+ */
 void io_unregister_zcrx_ifqs(struct io_ring_ctx *ctx)
 {
 	struct io_zcrx_ifq *ifq = ctx->ifq;
@@ -434,6 +471,9 @@ void io_unregister_zcrx_ifqs(struct io_ring_ctx *ctx)
 	io_zcrx_ifq_free(ifq);
 }
 
+/**
+ * Mendapatkan net_iov yang tersedia dari daftar bebas (freelist) di area zero-copy receive (io_zcrx_area).
+ */
 static struct net_iov *__io_zcrx_get_free_niov(struct io_zcrx_area *area)
 {
 	unsigned niov_idx;
@@ -444,6 +484,9 @@ static struct net_iov *__io_zcrx_get_free_niov(struct io_zcrx_area *area)
 	return &area->nia.niovs[niov_idx];
 }
 
+/**
+ * Mengembalikan net_iov ke daftar bebas (freelist) di area zero-copy receive.
+ */
 static void io_zcrx_return_niov_freelist(struct net_iov *niov)
 {
 	struct io_zcrx_area *area = io_zcrx_iov_to_area(niov);
@@ -453,6 +496,9 @@ static void io_zcrx_return_niov_freelist(struct net_iov *niov)
 	spin_unlock_bh(&area->freelist_lock);
 }
 
+/**
+ * Mengembalikan net_iov ke daftar bebas atau ke pool memori halaman (page pool).
+ */
 static void io_zcrx_return_niov(struct net_iov *niov)
 {
 	netmem_ref netmem = net_iov_to_netmem(niov);
@@ -465,6 +511,9 @@ static void io_zcrx_return_niov(struct net_iov *niov)
 	page_pool_put_unrefed_netmem(niov->pp, netmem, -1, false);
 }
 
+/**
+ * Membersihkan semua buffer jaringan (net_iov) yang telah diberikan ke ruang pengguna.
+ */
 static void io_zcrx_scrub(struct io_zcrx_ifq *ifq)
 {
 	struct io_zcrx_area *area = ifq->area;
@@ -486,6 +535,9 @@ static void io_zcrx_scrub(struct io_zcrx_ifq *ifq)
 	}
 }
 
+/**
+ * Menutup semua zero-copy receive interface queues (ifqs) yang terdaftar di konteks io_uring.
+ */
 void io_shutdown_zcrx_ifqs(struct io_ring_ctx *ctx)
 {
 	lockdep_assert_held(&ctx->uring_lock);
@@ -496,6 +548,9 @@ void io_shutdown_zcrx_ifqs(struct io_ring_ctx *ctx)
 	io_close_queue(ctx->ifq);
 }
 
+/**
+ * Menghitung jumlah entri yang tersedia di ring buffer (rq_ring) untuk ifq.
+ */
 static inline u32 io_zcrx_rqring_entries(struct io_zcrx_ifq *ifq)
 {
 	u32 entries;
@@ -504,6 +559,9 @@ static inline u32 io_zcrx_rqring_entries(struct io_zcrx_ifq *ifq)
 	return min(entries, ifq->rq_entries);
 }
 
+/**
+ * Mendapatkan entri ring buffer (rqe) dari zero-copy receive interface queue (ifq).
+ */
 static struct io_uring_zcrx_rqe *io_zcrx_get_rqe(struct io_zcrx_ifq *ifq,
 						 unsigned mask)
 {
@@ -512,6 +570,9 @@ static struct io_uring_zcrx_rqe *io_zcrx_get_rqe(struct io_zcrx_ifq *ifq,
 	return &ifq->rqes[idx];
 }
 
+/**
+ * Mengisi ulang ring buffer (rq_ring) dengan buffer jaringan (net_iov) dari pool memori halaman (page pool).
+ */
 static void io_zcrx_ring_refill(struct page_pool *pp,
 				struct io_zcrx_ifq *ifq)
 {
@@ -566,6 +627,9 @@ static void io_zcrx_ring_refill(struct page_pool *pp,
 	spin_unlock_bh(&ifq->rq_lock);
 }
 
+/**
+ * Mengisi ulang buffer secara lambat jika buffer cepat tidak mencukupi.
+ */
 static void io_zcrx_refill_slow(struct page_pool *pp, struct io_zcrx_ifq *ifq)
 {
 	struct io_zcrx_area *area = ifq->area;
@@ -582,6 +646,9 @@ static void io_zcrx_refill_slow(struct page_pool *pp, struct io_zcrx_ifq *ifq)
 	spin_unlock_bh(&area->freelist_lock);
 }
 
+/**
+ * Mengalokasikan memori jaringan (netmem) dari pool memori halaman (page pool).
+ */
 static netmem_ref io_pp_zc_alloc_netmems(struct page_pool *pp, gfp_t gfp)
 {
 	struct io_zcrx_ifq *ifq = pp->mp_priv;
@@ -601,6 +668,9 @@ out_return:
 	return pp->alloc.cache[--pp->alloc.count];
 }
 
+/**
+ * Melepaskan memori jaringan (netmem) kembali ke pool memori halaman (page pool).
+ */
 static bool io_pp_zc_release_netmem(struct page_pool *pp, netmem_ref netmem)
 {
 	struct net_iov *niov;
@@ -614,6 +684,9 @@ static bool io_pp_zc_release_netmem(struct page_pool *pp, netmem_ref netmem)
 	return false;
 }
 
+/**
+ * Inisialisasi pool memori halaman (page pool) untuk zero-copy receive.
+ */
 static int io_pp_zc_init(struct page_pool *pp)
 {
 	struct io_zcrx_ifq *ifq = pp->mp_priv;
@@ -633,6 +706,9 @@ static int io_pp_zc_init(struct page_pool *pp)
 	return 0;
 }
 
+/**
+ * Menghancurkan pool memori halaman (page pool) untuk zero-copy receive.
+ */
 static void io_pp_zc_destroy(struct page_pool *pp)
 {
 	struct io_zcrx_ifq *ifq = pp->mp_priv;
@@ -643,6 +719,9 @@ static void io_pp_zc_destroy(struct page_pool *pp)
 	percpu_ref_put(&ifq->ctx->refs);
 }
 
+/**
+ * Mengisi atribut Netlink untuk pool memori halaman (page pool).
+ */
 static int io_pp_nl_fill(void *mp_priv, struct sk_buff *rsp,
 			 struct netdev_rx_queue *rxq)
 {
@@ -658,6 +737,9 @@ static int io_pp_nl_fill(void *mp_priv, struct sk_buff *rsp,
 	return 0;
 }
 
+/**
+ * Menghapus instalasi pool memori halaman (page pool) dari antrean penerimaan jaringan.
+ */
 static void io_pp_uninstall(void *mp_priv, struct netdev_rx_queue *rxq)
 {
 	struct pp_memory_provider_params *p = &rxq->mp_params;
@@ -677,6 +759,7 @@ static const struct memory_provider_ops io_uring_pp_zc_ops = {
 	.uninstall		= io_pp_uninstall,
 };
 
+// Fungsi ini membuat dan mengisi Completion Queue Entry (CQE) untuk operasi zero-copy receive
 static bool io_zcrx_queue_cqe(struct io_kiocb *req, struct net_iov *niov,
 			      struct io_zcrx_ifq *ifq, int off, int len)
 {
@@ -700,6 +783,7 @@ static bool io_zcrx_queue_cqe(struct io_kiocb *req, struct net_iov *niov,
 	return true;
 }
 
+// Fungsi ini mengalokasikan buffer fallback (cadangan) dari area zero-copy receive jika buffer utama tidak tersedia
 static struct net_iov *io_zcrx_alloc_fallback(struct io_zcrx_area *area)
 {
 	struct net_iov *niov = NULL;
@@ -714,6 +798,7 @@ static struct net_iov *io_zcrx_alloc_fallback(struct io_zcrx_area *area)
 	return niov;
 }
 
+// Fungsi ini menyalin data dari sumber (baik dari memori biasa atau page) ke buffer fallback yang dialokasikan
 static ssize_t io_zcrx_copy_chunk(struct io_kiocb *req, struct io_zcrx_ifq *ifq,
 				  void *src_base, struct page *src_page,
 				  unsigned int src_offset, size_t len)
@@ -761,6 +846,7 @@ static ssize_t io_zcrx_copy_chunk(struct io_kiocb *req, struct io_zcrx_ifq *ifq,
 	return copied ? copied : ret;
 }
 
+// Fungsi ini menyalin data dari fragmen sk_buff (skb_frag_t) ke buffer fallback menggunakan io_zcrx_copy_chunk
 static int io_zcrx_copy_frag(struct io_kiocb *req, struct io_zcrx_ifq *ifq,
 			     const skb_frag_t *frag, int off, int len)
 {
@@ -780,6 +866,9 @@ static int io_zcrx_copy_frag(struct io_kiocb *req, struct io_zcrx_ifq *ifq,
 	return copied;
 }
 
+/**
+ * Menangani operasi zero-copy receive untuk socket.
+ */
 static int io_zcrx_recv_frag(struct io_kiocb *req, struct io_zcrx_ifq *ifq,
 			     const skb_frag_t *frag, int off, int len)
 {
@@ -805,6 +894,7 @@ static int io_zcrx_recv_frag(struct io_kiocb *req, struct io_zcrx_ifq *ifq,
 	return len;
 }
 
+// Fungsi ini menangani proses menerima data dari sebuah sk_buff (buffer jaringan) secara zero-copy atau fallback copy
 static int
 io_zcrx_recv_skb(read_descriptor_t *desc, struct sk_buff *skb,
 		 unsigned int offset, size_t len)
@@ -907,6 +997,8 @@ out:
 	return offset - start_off;
 }
 
+// Fungsi ini adalah handler utama untuk menerima data TCP secara zero-copy pada io_uring
+// Fungsi ini adalah handler utama untuk menerima data TCP secara zero-copy pada io_uring
 static int io_zcrx_tcp_recvmsg(struct io_kiocb *req, struct io_zcrx_ifq *ifq,
 				struct sock *sk, int flags,
 				unsigned issue_flags, unsigned int *outlen)
@@ -953,6 +1045,7 @@ out:
 	return ret;
 }
 
+// Fungsi ini adalah entry point untuk operasi receive zero-copy pada io_uring
 int io_zcrx_recv(struct io_kiocb *req, struct io_zcrx_ifq *ifq,
 		 struct socket *sock, unsigned int flags,
 		 unsigned issue_flags, unsigned int *len)

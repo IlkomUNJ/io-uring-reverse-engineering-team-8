@@ -36,6 +36,10 @@ struct io_rw {
 
 static bool io_file_supports_nowait(struct io_kiocb *req, __poll_t mask)
 {
+	/**
+	 * Memeriksa apakah file mendukung operasi non-blocking.
+	 * Mengandalkan flag FMODE_NOWAIT atau kemampuan polling.
+	 */
 	/* If FMODE_NOWAIT is set for a file, we're golden */
 	if (req->flags & REQ_F_SUPPORT_NOWAIT)
 		return true;
@@ -51,6 +55,10 @@ static bool io_file_supports_nowait(struct io_kiocb *req, __poll_t mask)
 
 static int io_iov_compat_buffer_select_prep(struct io_rw *rw)
 {
+	/**
+	 * Mempersiapkan pemilihan buffer dari iovec compat.
+	 * Menyalin panjang iovec dari ruang pengguna.
+	 */
 	struct compat_iovec __user *uiov = u64_to_user_ptr(rw->addr);
 	struct compat_iovec iov;
 
@@ -62,6 +70,10 @@ static int io_iov_compat_buffer_select_prep(struct io_rw *rw)
 
 static int io_iov_buffer_select_prep(struct io_kiocb *req)
 {
+	/**
+	 * Mempersiapkan pemilihan buffer dari iovec.
+	 * Menyalin panjang iovec dari ruang pengguna.
+	 */
 	struct iovec __user *uiov;
 	struct iovec iov;
 	struct io_rw *rw = io_kiocb_to_cmd(req, struct io_rw);
@@ -322,11 +334,19 @@ static int io_prep_rw(struct io_kiocb *req, const struct io_uring_sqe *sqe,
 
 int io_prep_read(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 {
+	/**
+	 * Mempersiapkan operasi baca dari SQE.
+	 * Memanggil fungsi persiapan umum dengan parameter arah baca.
+	 */
 	return io_prep_rw(req, sqe, ITER_DEST);
 }
 
 int io_prep_write(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 {
+	/**
+	 * Mempersiapkan operasi tulis dari SQE.
+	 * Memanggil fungsi persiapan umum dengan parameter arah tulis.
+	 */
 	return io_prep_rw(req, sqe, ITER_SOURCE);
 }
 
@@ -350,11 +370,19 @@ static int io_prep_rwv(struct io_kiocb *req, const struct io_uring_sqe *sqe,
 
 int io_prep_readv(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 {
+	/**
+	 * Mempersiapkan operasi readv dari SQE.
+	 * Memanggil fungsi persiapan umum vectored dengan parameter arah baca.
+	 */
 	return io_prep_rwv(req, sqe, ITER_DEST);
 }
 
 int io_prep_writev(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 {
+	/**
+	 * Mempersiapkan operasi writev dari SQE.
+	 * Memanggil fungsi persiapan umum vectored dengan parameter arah tulis.
+	 */
 	return io_prep_rwv(req, sqe, ITER_SOURCE);
 }
 
@@ -376,11 +404,19 @@ static int io_init_rw_fixed(struct io_kiocb *req, unsigned int issue_flags,
 
 int io_prep_read_fixed(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 {
+	/**
+	 * Mempersiapkan operasi baca dengan buffer tetap.
+	 * Memanggil fungsi persiapan baca umum dengan flag tertentu.
+	 */
 	return __io_prep_rw(req, sqe, ITER_DEST);
 }
 
 int io_prep_write_fixed(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 {
+	/**
+	 * Mempersiapkan operasi tulis dengan buffer tetap.
+	 * Memanggil fungsi persiapan tulis umum dengan flag tertentu.
+	 */
 	return __io_prep_rw(req, sqe, ITER_SOURCE);
 }
 
@@ -413,6 +449,10 @@ static int io_rw_prep_reg_vec(struct io_kiocb *req)
 
 int io_prep_readv_fixed(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 {
+	/**
+	 * Mempersiapkan operasi readv dengan buffer tetap.
+	 * Memanggil fungsi persiapan read vectored dengan flag tertentu.
+	 */
 	int ret;
 
 	ret = __io_prep_rw(req, sqe, ITER_DEST);
@@ -423,6 +463,10 @@ int io_prep_readv_fixed(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 
 int io_prep_writev_fixed(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 {
+	/**
+	 * Mempersiapkan operasi writev dengan buffer tetap.
+	 * Memanggil fungsi persiapan write vectored dengan flag tertentu.
+	 */
 	int ret;
 
 	ret = __io_prep_rw(req, sqe, ITER_SOURCE);
@@ -457,6 +501,10 @@ int io_read_mshot_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 
 void io_readv_writev_cleanup(struct io_kiocb *req)
 {
+	/**
+	 * Membersihkan sumber daya operasi readv/writev.
+	 * Membebaskan data async jika telah dialokasikan.
+	 */
 	lockdep_assert_held(&req->ctx->uring_lock);
 	io_rw_recycle(req, 0);
 }
@@ -1011,6 +1059,10 @@ done:
 
 int io_read(struct io_kiocb *req, unsigned int issue_flags)
 {
+	/**
+	 * Mengeksekusi operasi baca io_uring.
+	 * Menangani kasus-kasus khusus dan memanggil __io_read.
+	 */
 	int ret;
 
 	ret = __io_read(req, issue_flags);
@@ -1107,6 +1159,10 @@ static bool io_kiocb_start_write(struct io_kiocb *req, struct kiocb *kiocb)
 
 int io_write(struct io_kiocb *req, unsigned int issue_flags)
 {
+	/**
+	 * Mengeksekusi operasi tulis io_uring.
+	 * Menangani kasus-kasus khusus dan memanggil fungsi internal.
+	 */
 	bool force_nonblock = issue_flags & IO_URING_F_NONBLOCK;
 	struct io_rw *rw = io_kiocb_to_cmd(req, struct io_rw);
 	struct io_async_rw *io = req->async_data;
@@ -1203,6 +1259,10 @@ ret_eagain:
 
 int io_read_fixed(struct io_kiocb *req, unsigned int issue_flags)
 {
+	/**
+	 * Mempersiapkan operasi baca dengan buffer tetap.
+	 * Memanggil fungsi persiapan baca umum dengan flag tertentu.
+	 */
 	int ret;
 
 	ret = io_init_rw_fixed(req, issue_flags, ITER_DEST);
@@ -1214,6 +1274,10 @@ int io_read_fixed(struct io_kiocb *req, unsigned int issue_flags)
 
 int io_write_fixed(struct io_kiocb *req, unsigned int issue_flags)
 {
+	/**
+	 * Mempersiapkan operasi tulis dengan buffer tetap.
+	 * Memanggil fungsi persiapan tulis umum dengan flag tertentu.
+	 */
 	int ret;
 
 	ret = io_init_rw_fixed(req, issue_flags, ITER_SOURCE);
@@ -1225,6 +1289,10 @@ int io_write_fixed(struct io_kiocb *req, unsigned int issue_flags)
 
 void io_rw_fail(struct io_kiocb *req)
 {
+	/**
+	 * Menangani kegagalan operasi baca/tulis.
+	 * Membersihkan dan menyelesaikan request dengan status gagal.
+	 */
 	int res;
 
 	res = io_fixup_rw_res(req, req->cqe.res);

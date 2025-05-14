@@ -12,6 +12,10 @@
 static const struct ubuf_info_ops io_ubuf_ops;
 
 static void io_notif_tw_complete(struct io_kiocb *notif, io_tw_token_t tw)
+/**
+ * Selesaikan task work untuk notif.
+ * Memastikan semua buffer zerocopy selesai diproses dan membebaskan memori.
+ */
 {
 	struct io_notif_data *nd = io_notif_to_data(notif);
 
@@ -34,7 +38,11 @@ static void io_notif_tw_complete(struct io_kiocb *notif, io_tw_token_t tw)
 }
 
 void io_tx_ubuf_complete(struct sk_buff *skb, struct ubuf_info *uarg,
-			 bool success)
+             bool success)
+/**
+ * Selesaikan transfer buffer zerocopy.
+ * Memastikan buffer telah diproses dengan sukses atau gagal.
+ */
 {
 	struct io_notif_data *nd = container_of(uarg, struct io_notif_data, uarg);
 	struct io_kiocb *notif = cmd_to_io_kiocb(nd);
@@ -61,6 +69,10 @@ void io_tx_ubuf_complete(struct sk_buff *skb, struct ubuf_info *uarg,
 }
 
 static int io_link_skb(struct sk_buff *skb, struct ubuf_info *uarg)
+/**
+ * Hubungkan sk_buff ke notif.
+ * Mengelola hubungan antara buffer zerocopy dan notif.
+ */
 {
 	struct io_notif_data *nd, *prev_nd;
 	struct io_kiocb *prev_notif, *notif;
@@ -103,9 +115,22 @@ static const struct ubuf_info_ops io_ubuf_ops = {
 	.complete = io_tx_ubuf_complete,
 	.link_skb = io_link_skb,
 };
+/**
+ * Struktur `io_ubuf_ops` mendefinisikan operasi untuk `ubuf_info`.
+ * 
+ * - `complete`: Fungsi callback untuk menyelesaikan transfer zerocopy buffer.
+ *   Menggunakan `io_tx_ubuf_complete` untuk memastikan buffer diproses dengan benar.
+ * 
+ * - `link_skb`: Fungsi callback untuk menghubungkan `sk_buff` ke notif.
+ *   Menggunakan `io_link_skb` untuk mengelola hubungan antara buffer zerocopy dan notif.
+ */
 
 struct io_kiocb *io_alloc_notif(struct io_ring_ctx *ctx)
-	__must_hold(&ctx->uring_lock)
+/**
+ * Alokasikan struktur notif untuk io_uring.
+ * Mengembalikan pointer ke notif yang dialokasikan.
+ */
+    __must_hold(&ctx->uring_lock)
 {
 	struct io_kiocb *notif;
 	struct io_notif_data *nd;

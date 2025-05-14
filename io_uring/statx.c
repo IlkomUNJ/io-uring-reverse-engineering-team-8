@@ -20,6 +20,7 @@ struct io_statx {
 	struct statx __user		*buffer;
 };
 
+// Prepares the io_statx operation by validating and initializing the request.
 int io_statx_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 {
 	struct io_statx *sx = io_kiocb_to_cmd(req, struct io_statx);
@@ -50,6 +51,7 @@ int io_statx_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 	return 0;
 }
 
+// Menjalankan operasi io_statx, melakukan panggilan sistem statx.
 int io_statx(struct io_kiocb *req, unsigned int issue_flags)
 {
 	struct io_statx *sx = io_kiocb_to_cmd(req, struct io_statx);
@@ -62,6 +64,7 @@ int io_statx(struct io_kiocb *req, unsigned int issue_flags)
 	return IOU_OK;
 }
 
+// Membersihkan sumber daya yang dialokasikan selama operasi io_statx.
 void io_statx_cleanup(struct io_kiocb *req)
 {
 	struct io_statx *sx = io_kiocb_to_cmd(req, struct io_statx);

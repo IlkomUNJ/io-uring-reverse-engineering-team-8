@@ -46,6 +46,14 @@ extern const struct io_issue_def io_issue_defs[];
 extern const struct io_cold_def io_cold_defs[];
 
 bool io_uring_op_supported(u8 opcode);
+/**
+ * Periksa apakah opcode didukung oleh io_uring.
+ * Mengembalikan true jika opcode didukung, false jika tidak.
+ */
 
 void io_uring_optable_init(void);
+/**
+ * Inisialisasi tabel operasi io_uring.
+ * Menyiapkan definisi operasi untuk digunakan dalam io_uring.
+ */
 #endif

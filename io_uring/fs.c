@@ -47,6 +47,10 @@ struct io_link {
 	int				flags;
 };
 
+/**
+ * Mempersiapkan operasi renameat berdasarkan SQE.
+ * Memvalidasi parameter dan mengisi struktur io_rename.
+ */
 int io_renameat_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 {
 	struct io_rename *ren = io_kiocb_to_cmd(req, struct io_rename);
@@ -78,6 +82,10 @@ int io_renameat_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 	return 0;
 }
 
+/**
+ * Menjalankan operasi renameat.
+ * Mengganti nama file atau direktori sesuai parameter.
+ */
 int io_renameat(struct io_kiocb *req, unsigned int issue_flags)
 {
 	struct io_rename *ren = io_kiocb_to_cmd(req, struct io_rename);
@@ -93,6 +101,10 @@ int io_renameat(struct io_kiocb *req, unsigned int issue_flags)
 	return IOU_OK;
 }
 
+/**
+ * Membersihkan sumber daya yang digunakan oleh operasi renameat.
+ * Membebaskan nama file lama dan baru.
+ */
 void io_renameat_cleanup(struct io_kiocb *req)
 {
 	struct io_rename *ren = io_kiocb_to_cmd(req, struct io_rename);
@@ -101,6 +113,10 @@ void io_renameat_cleanup(struct io_kiocb *req)
 	putname(ren->newpath);
 }
 
+/**
+ * Mempersiapkan operasi unlinkat berdasarkan SQE.
+ * Memvalidasi parameter dan mengisi struktur io_unlink.
+ */
 int io_unlinkat_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 {
 	struct io_unlink *un = io_kiocb_to_cmd(req, struct io_unlink);
@@ -127,6 +143,10 @@ int io_unlinkat_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 	return 0;
 }
 
+/**
+ * Menjalankan operasi unlinkat.
+ * Menghapus file atau direktori sesuai parameter.
+ */
 int io_unlinkat(struct io_kiocb *req, unsigned int issue_flags)
 {
 	struct io_unlink *un = io_kiocb_to_cmd(req, struct io_unlink);
@@ -144,6 +164,10 @@ int io_unlinkat(struct io_kiocb *req, unsigned int issue_flags)
 	return IOU_OK;
 }
 
+/**
+ * Membersihkan sumber daya yang digunakan oleh operasi unlinkat.
+ * Membebaskan nama file yang dihapus.
+ */
 void io_unlinkat_cleanup(struct io_kiocb *req)
 {
 	struct io_unlink *ul = io_kiocb_to_cmd(req, struct io_unlink);
@@ -151,6 +175,10 @@ void io_unlinkat_cleanup(struct io_kiocb *req)
 	putname(ul->filename);
 }
 
+/**
+ * Mempersiapkan operasi mkdirat berdasarkan SQE.
+ * Memvalidasi parameter dan mengisi struktur io_mkdir.
+ */
 int io_mkdirat_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 {
 	struct io_mkdir *mkd = io_kiocb_to_cmd(req, struct io_mkdir);
@@ -174,6 +202,10 @@ int io_mkdirat_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 	return 0;
 }
 
+/**
+ * Menjalankan operasi mkdirat.
+ * Membuat direktori baru sesuai parameter.
+ */
 int io_mkdirat(struct io_kiocb *req, unsigned int issue_flags)
 {
 	struct io_mkdir *mkd = io_kiocb_to_cmd(req, struct io_mkdir);
@@ -188,6 +220,10 @@ int io_mkdirat(struct io_kiocb *req, unsigned int issue_flags)
 	return IOU_OK;
 }
 
+/**
+ * Membersihkan sumber daya yang digunakan oleh operasi mkdirat.
+ * Membebaskan nama direktori yang dibuat.
+ */
 void io_mkdirat_cleanup(struct io_kiocb *req)
 {
 	struct io_mkdir *md = io_kiocb_to_cmd(req, struct io_mkdir);
@@ -195,6 +231,10 @@ void io_mkdirat_cleanup(struct io_kiocb *req)
 	putname(md->filename);
 }
 
+/**
+ * Mempersiapkan operasi symlinkat berdasarkan SQE.
+ * Memvalidasi parameter dan mengisi struktur io_link.
+ */
 int io_symlinkat_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 {
 	struct io_link *sl = io_kiocb_to_cmd(req, struct io_link);
@@ -224,6 +264,10 @@ int io_symlinkat_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 	return 0;
 }
 
+/**
+ * Menjalankan operasi symlinkat.
+ * Membuat symbolic link sesuai parameter.
+ */
 int io_symlinkat(struct io_kiocb *req, unsigned int issue_flags)
 {
 	struct io_link *sl = io_kiocb_to_cmd(req, struct io_link);
@@ -238,6 +282,10 @@ int io_symlinkat(struct io_kiocb *req, unsigned int issue_flags)
 	return IOU_OK;
 }
 
+/**
+ * Mempersiapkan operasi linkat berdasarkan SQE.
+ * Memvalidasi parameter dan mengisi struktur io_link.
+ */
 int io_linkat_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 {
 	struct io_link *lnk = io_kiocb_to_cmd(req, struct io_link);
@@ -269,6 +317,10 @@ int io_linkat_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 	return 0;
 }
 
+/**
+ * Menjalankan operasi linkat.
+ * Membuat hard link sesuai parameter.
+ */
 int io_linkat(struct io_kiocb *req, unsigned int issue_flags)
 {
 	struct io_link *lnk = io_kiocb_to_cmd(req, struct io_link);
@@ -284,6 +336,10 @@ int io_linkat(struct io_kiocb *req, unsigned int issue_flags)
 	return IOU_OK;
 }
 
+/**
+ * Membersihkan sumber daya yang digunakan oleh operasi linkat.
+ * Membebaskan nama file lama dan baru.
+ */
 void io_link_cleanup(struct io_kiocb *req)
 {
 	struct io_link *sl = io_kiocb_to_cmd(req, struct io_link);

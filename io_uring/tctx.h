@@ -22,6 +22,7 @@ int io_ringfd_unregister(struct io_ring_ctx *ctx, void __user *__arg,
 /*
  * Note that this task has used io_uring. We use it for cancelation purposes.
  */
+// Menambahkan simpul konteks tugas ke konteks io_uring jika belum ditambahkan sebelumnya.
 static inline int io_uring_add_tctx_node(struct io_ring_ctx *ctx)
 {
 	struct io_uring_task *tctx = current->io_uring;

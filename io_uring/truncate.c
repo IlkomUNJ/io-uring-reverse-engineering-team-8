@@ -20,6 +20,7 @@ struct io_ftrunc {
 	loff_t				len;
 };
 
+// Mempersiapkan operasi ftruncate dengan memvalidasi dan menginisialisasi permintaan.
 int io_ftruncate_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 {
 	struct io_ftrunc *ft = io_kiocb_to_cmd(req, struct io_ftrunc);
@@ -34,6 +35,7 @@ int io_ftruncate_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 	return 0;
 }
 
+// Menjalankan operasi ftruncate, memotong file ke panjang yang ditentukan.
 int io_ftruncate(struct io_kiocb *req, unsigned int issue_flags)
 {
 	struct io_ftrunc *ft = io_kiocb_to_cmd(req, struct io_ftrunc);

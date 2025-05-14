@@ -26,6 +26,10 @@ struct io_epoll_wait {
 	struct epoll_event __user	*events;
 };
 
+/**
+ * Mempersiapkan operasi epoll_ctl berdasarkan SQE.
+ * Memvalidasi parameter dan mengisi struktur io_epoll.
+ */
 int io_epoll_ctl_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 {
 	struct io_epoll *epoll = io_kiocb_to_cmd(req, struct io_epoll);
@@ -68,6 +72,10 @@ int io_epoll_ctl(struct io_kiocb *req, unsigned int issue_flags)
 	return IOU_OK;
 }
 
+/**
+ * Mempersiapkan operasi epoll_wait berdasarkan SQE.
+ * Memvalidasi parameter dan mengisi struktur io_epoll_wait.
+ */
 int io_epoll_wait_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 {
 	struct io_epoll_wait *iew = io_kiocb_to_cmd(req, struct io_epoll_wait);
@@ -80,6 +88,10 @@ int io_epoll_wait_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 	return 0;
 }
 
+/**
+ * Menjalankan operasi epoll_wait untuk mengirimkan event.
+ * Mengembalikan jumlah event yang dikirim atau kode kesalahan.
+ */
 int io_epoll_wait(struct io_kiocb *req, unsigned int issue_flags)
 {
 	struct io_epoll_wait *iew = io_kiocb_to_cmd(req, struct io_epoll_wait);

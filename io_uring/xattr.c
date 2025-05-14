@@ -22,6 +22,7 @@ struct io_xattr {
 	struct filename			*filename;
 };
 
+// Cleans up resources allocated for the io_xattr request.
 void io_xattr_cleanup(struct io_kiocb *req)
 {
 	struct io_xattr *ix = io_kiocb_to_cmd(req, struct io_xattr);
@@ -33,6 +34,7 @@ void io_xattr_cleanup(struct io_kiocb *req)
 	kvfree(ix->ctx.kvalue);
 }
 
+// Cleans up resources allocated for the io_xattr request.
 static void io_xattr_finish(struct io_kiocb *req, int ret)
 {
 	req->flags &= ~REQ_F_NEED_CLEANUP;
@@ -41,6 +43,7 @@ static void io_xattr_finish(struct io_kiocb *req, int ret)
 	io_req_set_res(req, ret, 0);
 }
 
+// Prepares the getxattr operation by validating and initializing the request.
 static int __io_getxattr_prep(struct io_kiocb *req,
 			      const struct io_uring_sqe *sqe)
 {
@@ -73,11 +76,13 @@ static int __io_getxattr_prep(struct io_kiocb *req,
 	return 0;
 }
 
+// Prepares the fgetxattr operation by delegating to the generic getxattr preparation function.
 int io_fgetxattr_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 {
 	return __io_getxattr_prep(req, sqe);
 }
 
+// Prepares the getxattr operation by validating and initializing the request.
 int io_getxattr_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 {
 	struct io_xattr *ix = io_kiocb_to_cmd(req, struct io_xattr);
@@ -100,6 +105,7 @@ int io_getxattr_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 	return 0;
 }
 
+// Executes the fgetxattr operation, retrieving extended attributes for a file.
 int io_fgetxattr(struct io_kiocb *req, unsigned int issue_flags)
 {
 	struct io_xattr *ix = io_kiocb_to_cmd(req, struct io_xattr);
@@ -112,6 +118,7 @@ int io_fgetxattr(struct io_kiocb *req, unsigned int issue_flags)
 	return IOU_OK;
 }
 
+// Executes the getxattr operation, retrieving extended attributes for a file by name.
 int io_getxattr(struct io_kiocb *req, unsigned int issue_flags)
 {
 	struct io_xattr *ix = io_kiocb_to_cmd(req, struct io_xattr);
@@ -125,6 +132,7 @@ int io_getxattr(struct io_kiocb *req, unsigned int issue_flags)
 	return IOU_OK;
 }
 
+// Prepares the setxattr operation by validating and initializing the request.
 static int __io_setxattr_prep(struct io_kiocb *req,
 			const struct io_uring_sqe *sqe)
 {
@@ -154,6 +162,7 @@ static int __io_setxattr_prep(struct io_kiocb *req,
 	return 0;
 }
 
+// Prepares the setxattr operation by validating and initializing the request, including the filename.
 int io_setxattr_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 {
 	struct io_xattr *ix = io_kiocb_to_cmd(req, struct io_xattr);
@@ -176,12 +185,13 @@ int io_setxattr_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 	return 0;
 }
 
+// Prepares the fsetxattr operation by delegating to the generic setxattr preparation function.
 int io_fsetxattr_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 {
 	return __io_setxattr_prep(req, sqe);
 }
 
-int io_fsetxattr(struct io_kiocb *req, unsigned int issue_flags)
+// Menjalankan operasi fsetxattr, mengatur atribut yang diperluas untuk suatu file.int io_fsetxattr(struct io_kiocb *req, unsigned int issue_flags)
 {
 	struct io_xattr *ix = io_kiocb_to_cmd(req, struct io_xattr);
 	int ret;
@@ -193,6 +203,7 @@ int io_fsetxattr(struct io_kiocb *req, unsigned int issue_flags)
 	return IOU_OK;
 }
 
+// Menjalankan operasi setxattr, mengatur atribut yang diperluas untuk file berdasarkan nama.
 int io_setxattr(struct io_kiocb *req, unsigned int issue_flags)
 {
 	struct io_xattr *ix = io_kiocb_to_cmd(req, struct io_xattr);

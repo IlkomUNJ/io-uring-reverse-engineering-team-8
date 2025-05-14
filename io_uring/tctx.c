@@ -12,6 +12,7 @@
 #include "io_uring.h"
 #include "tctx.h"
 
+// Menginisialisasi antrian pekerjaan untuk memindahkan tugas dalam io_uring.
 static struct io_wq *io_init_wq_offload(struct io_ring_ctx *ctx,
 					struct task_struct *task)
 {
@@ -44,6 +45,7 @@ static struct io_wq *io_init_wq_offload(struct io_ring_ctx *ctx,
 	return io_wq_create(concurrency, &data);
 }
 
+// Membebaskan konteks tugas io_uring yang terkait dengan sebuah tugas.
 void __io_uring_free(struct task_struct *tsk)
 {
 	struct io_uring_task *tctx = tsk->io_uring;
@@ -68,6 +70,7 @@ void __io_uring_free(struct task_struct *tsk)
 	tsk->io_uring = NULL;
 }
 
+// Mengalokasikan konteks tugas io_uring baru untuk sebuah tugas yang diberikan.
 __cold int io_uring_alloc_task_context(struct task_struct *task,
 				       struct io_ring_ctx *ctx)
 {
@@ -103,6 +106,7 @@ __cold int io_uring_alloc_task_context(struct task_struct *task,
 	return 0;
 }
 
+// Menambahkan simpul konteks tugas ke konteks io_uring.
 int __io_uring_add_tctx_node(struct io_ring_ctx *ctx)
 {
 	struct io_uring_task *tctx = current->io_uring;
@@ -145,6 +149,7 @@ int __io_uring_add_tctx_node(struct io_ring_ctx *ctx)
 	return 0;
 }
 
+// Menambahkan simpul konteks tugas dari konteks pengajuan.
 int __io_uring_add_tctx_node_from_submit(struct io_ring_ctx *ctx)
 {
 	int ret;
@@ -164,6 +169,7 @@ int __io_uring_add_tctx_node_from_submit(struct io_ring_ctx *ctx)
 /*
  * Remove this io_uring_file -> task mapping.
  */
+// Menghapus simpul konteks tugas dari konteks io_uring.
 __cold void io_uring_del_tctx_node(unsigned long index)
 {
 	struct io_uring_task *tctx = current->io_uring;
@@ -187,6 +193,7 @@ __cold void io_uring_del_tctx_node(unsigned long index)
 	kfree(node);
 }
 
+// Membersihkan semua simpul konteks tugas dan sumber daya terkait.
 __cold void io_uring_clean_tctx(struct io_uring_task *tctx)
 {
 	struct io_wq *wq = tctx->io_wq;
@@ -207,6 +214,7 @@ __cold void io_uring_clean_tctx(struct io_uring_task *tctx)
 	}
 }
 
+// Membatalkan pendaftaran semua file descriptor ring yang terkait dengan konteks tugas.
 void io_uring_unreg_ringfd(void)
 {
 	struct io_uring_task *tctx = current->io_uring;
@@ -220,6 +228,7 @@ void io_uring_unreg_ringfd(void)
 	}
 }
 
+// Menambahkan file yang terdaftar ke konteks tugas io_uring.
 int io_ring_add_registered_file(struct io_uring_task *tctx, struct file *file,
 				     int start, int end)
 {
@@ -235,6 +244,7 @@ int io_ring_add_registered_file(struct io_uring_task *tctx, struct file *file,
 	return -EBUSY;
 }
 
+// Menambahkan file descriptor yang terdaftar ke konteks tugas io_uring.
 static int io_ring_add_registered_fd(struct io_uring_task *tctx, int fd,
 				     int start, int end)
 {
@@ -262,6 +272,7 @@ static int io_ring_add_registered_fd(struct io_uring_task *tctx, int fd,
  * and we'll find an available index. Returns number of entries
  * successfully processed, or < 0 on error if none were processed.
  */
+// Mendaftarkan file descriptor ring untuk operasi io_uring.
 int io_ringfd_register(struct io_ring_ctx *ctx, void __user *__arg,
 		       unsigned nr_args)
 {
@@ -321,6 +332,7 @@ int io_ringfd_register(struct io_ring_ctx *ctx, void __user *__arg,
 	return i ? i : ret;
 }
 
+// Membatalkan pendaftaran file descriptor ring dari konteks tugas io_uring.
 int io_ringfd_unregister(struct io_ring_ctx *ctx, void __user *__arg,
 			 unsigned nr_args)
 {

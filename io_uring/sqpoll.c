@@ -27,6 +27,7 @@ enum {
 	IO_SQ_THREAD_SHOULD_PARK,
 };
 
+// Membuka kembali thread SQ, memungkinkan untuk melanjutkan eksekusi.
 void io_sq_thread_unpark(struct io_sq_data *sqd)
 	__releases(&sqd->lock)
 {
@@ -43,6 +44,7 @@ void io_sq_thread_unpark(struct io_sq_data *sqd)
 	wake_up(&sqd->wait);
 }
 
+// Menjeda thread SQ, menghentikan eksekusinya hingga dibuka kembali.
 void io_sq_thread_park(struct io_sq_data *sqd)
 	__acquires(&sqd->lock)
 {
@@ -55,6 +57,7 @@ void io_sq_thread_park(struct io_sq_data *sqd)
 		wake_up_process(sqd->thread);
 }
 
+// Menghentikan thread SQ dan menunggu hingga selesai.
 void io_sq_thread_stop(struct io_sq_data *sqd)
 {
 	WARN_ON_ONCE(sqd->thread == current);
@@ -68,6 +71,7 @@ void io_sq_thread_stop(struct io_sq_data *sqd)
 	wait_for_completion(&sqd->exited);
 }
 
+// Mengurangi hitungan referensi untuk data SQ dan membebaskannya jika tidak ada referensi yang tersisa.
 void io_put_sq_data(struct io_sq_data *sqd)
 {
 	if (refcount_dec_and_test(&sqd->refs)) {
@@ -78,6 +82,7 @@ void io_put_sq_data(struct io_sq_data *sqd)
 	}
 }
 
+// Memperbarui batas waktu idle untuk thread SQ berdasarkan konteks yang dikelolanya.
 static __cold void io_sqd_update_thread_idle(struct io_sq_data *sqd)
 {
 	struct io_ring_ctx *ctx;
@@ -88,6 +93,7 @@ static __cold void io_sqd_update_thread_idle(struct io_sq_data *sqd)
 	sqd->sq_thread_idle = sq_thread_idle;
 }
 
+// Menyelesaikan thread SQ untuk konteks yang diberikan, membersihkan sumber daya.
 void io_sq_thread_finish(struct io_ring_ctx *ctx)
 {
 	struct io_sq_data *sqd = ctx->sq_data;
@@ -103,6 +109,7 @@ void io_sq_thread_finish(struct io_ring_ctx *ctx)
 	}
 }
 
+// Menempelkan struktur data SQ yang sudah ada ke konteks baru.
 static struct io_sq_data *io_attach_sq_data(struct io_uring_params *p)
 {
 	struct io_ring_ctx *ctx_attach;
@@ -125,6 +132,7 @@ static struct io_sq_data *io_attach_sq_data(struct io_uring_params *p)
 	return sqd;
 }
 
+// Membuat atau mengambil struktur data SQ untuk konteks yang diberikan.
 static struct io_sq_data *io_get_sq_data(struct io_uring_params *p,
 					 bool *attached)
 {
@@ -155,11 +163,13 @@ static struct io_sq_data *io_get_sq_data(struct io_uring_params *p,
 	return sqd;
 }
 
+// Fungsi ini mengecek apakah ada event atau perubahan status pada thread SQPOLL 
 static inline bool io_sqd_events_pending(struct io_sq_data *sqd)
 {
 	return READ_ONCE(sqd->state);
 }
 
+//  Ini fungsi utama yang dijalankan oleh SQPOLL thread untuk memproses permintaan dari submission queue.
 static int __io_sq_thread(struct io_ring_ctx *ctx, bool cap_entries)
 {
 	unsigned int to_submit;
@@ -198,6 +208,7 @@ static int __io_sq_thread(struct io_ring_ctx *ctx, bool cap_entries)
 	return ret;
 }
 
+// Fungsi ini menangani event khusus yang memengaruhi SQPOLL thread, Permintaan untuk berhenti sementara (park) atau berhenti permanen (stop)
 static bool io_sqd_handle_event(struct io_sq_data *sqd)
 {
 	bool did_sig = false;
@@ -221,6 +232,8 @@ static bool io_sqd_handle_event(struct io_sq_data *sqd)
  * than we were asked to process. Newly queued task_work isn't run until the
  * retry list has been fully processed.
  */
+
+//  Fungsi ini mengembalikan jumlah task yang berhasil dijalankan
 static unsigned int io_sq_tw(struct llist_node **retry_list, int max_entries)
 {
 	struct io_uring_task *tctx = current->io_uring;
@@ -239,6 +252,7 @@ out:
 	return count;
 }
 
+// FUngsi ini mengecek apakah masih ada task work yang tertunda
 static bool io_sq_tw_pending(struct llist_node *retry_list)
 {
 	struct io_uring_task *tctx = current->io_uring;
@@ -246,6 +260,7 @@ static bool io_sq_tw_pending(struct llist_node *retry_list)
 	return retry_list || !llist_empty(&tctx->task_list);
 }
 
+// Fungsi ini menghitung berapa lama waktu CPU sistem (kernel time) yang digunakan oleh SQPOLL thread selama bekerja
 static void io_sq_update_worktime(struct io_sq_data *sqd, struct rusage *start)
 {
 	struct rusage end;
@@ -257,6 +272,7 @@ static void io_sq_update_worktime(struct io_sq_data *sqd, struct rusage *start)
 	sqd->work_time += end.ru_stime.tv_usec + end.ru_stime.tv_sec * 1000000;
 }
 
+// Fungsi ini memproses permintaan I/O user space secara langsung dari memory ring buffer, menjalankan task tambahan, memantau sinyal dan shutdown, serta memastikan semua berjalan efisien dan responsif
 static int io_sq_thread(void *data)
 {
 	struct llist_node *retry_list = NULL;
@@ -389,6 +405,7 @@ err_out:
 	do_exit(0);
 }
 
+// Fungsi ini membuat thread pengguna menunggu (sleep) jika antrian SQ penuh, dan baru akan bangun ketika ada ruang kosong untuk menambahkan permintaan baru
 void io_sqpoll_wait_sq(struct io_ring_ctx *ctx)
 {
 	DEFINE_WAIT(wait);
@@ -406,6 +423,7 @@ void io_sqpoll_wait_sq(struct io_ring_ctx *ctx)
 	finish_wait(&ctx->sqo_sq_wait, &wait);
 }
 
+// Fungsi ini digunakan saat aplikasi ingin menggunakan mode SQPOLL (Submission Queue Polling).
 __cold int io_sq_offload_create(struct io_ring_ctx *ctx,
 				struct io_uring_params *p)
 {
@@ -508,6 +526,7 @@ err:
 	return ret;
 }
 
+// Fungsi ini berfungsi untuk mengatur CPU affinity (penempatan thread pada CPU tertentu) untuk thread SQPOLL di io_uring
 __cold int io_sqpoll_wq_cpu_affinity(struct io_ring_ctx *ctx,
 				     cpumask_var_t mask)
 {

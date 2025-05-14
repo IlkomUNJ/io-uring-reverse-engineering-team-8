@@ -32,6 +32,10 @@ int io_cancel_remove(struct io_ring_ctx *ctx, struct io_cancel_data *cd,
 		     unsigned int issue_flags, struct hlist_head *list,
 		     bool (*cancel)(struct io_kiocb *));
 
+/**
+ * Mengecek apakah urutan pembatalan cocok dengan permintaan.
+ * Mengembalikan true jika urutan cocok, atau mengatur urutan baru jika tidak.
+ */
 static inline bool io_cancel_match_sequence(struct io_kiocb *req, int sequence)
 {
 	if (req->cancel_seq_set && sequence == req->work.cancel_seq)

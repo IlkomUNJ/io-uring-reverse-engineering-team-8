@@ -16,6 +16,11 @@
 #include "rsrc.h"
 
 #ifdef CONFIG_PROC_FS
+
+/**
+ * Menampilkan informasi kredensial untuk file descriptor.
+ * Menyertakan UID, GID, grup, dan kemampuan efektif.
+ */
 static __cold int io_uring_show_cred(struct seq_file *m, unsigned int id,
 		const struct cred *cred)
 {
@@ -47,6 +52,11 @@ static __cold int io_uring_show_cred(struct seq_file *m, unsigned int id,
 }
 
 #ifdef CONFIG_NET_RX_BUSY_POLL
+
+/**
+ * Menampilkan informasi pelacakan NAPI untuk file descriptor.
+ * Menyertakan strategi pelacakan dan status polling.
+ */
 static __cold void common_tracking_show_fdinfo(struct io_ring_ctx *ctx,
 					       struct seq_file *m,
 					       const char *tracking_strategy)
@@ -60,6 +70,10 @@ static __cold void common_tracking_show_fdinfo(struct io_ring_ctx *ctx,
 		seq_puts(m, "napi_prefer_busy_poll:\tfalse\n");
 }
 
+/**
+ * Menampilkan informasi NAPI berdasarkan mode pelacakan.
+ * Menyertakan mode pelacakan dinamis atau statis.
+ */
 static __cold void napi_show_fdinfo(struct io_ring_ctx *ctx,
 				    struct seq_file *m)
 {
@@ -80,6 +94,9 @@ static __cold void napi_show_fdinfo(struct io_ring_ctx *ctx,
 	}
 }
 #else
+/**
+ * Fungsi dummy untuk menampilkan informasi NAPI jika tidak diaktifkan.
+ */
 static inline void napi_show_fdinfo(struct io_ring_ctx *ctx,
 				    struct seq_file *m)
 {
@@ -89,6 +106,10 @@ static inline void napi_show_fdinfo(struct io_ring_ctx *ctx,
 /*
  * Caller holds a reference to the file already, we don't need to do
  * anything else to get an extra reference.
+ */
+ /**
+ * Menampilkan informasi fdinfo untuk io_uring.
+ * Menyertakan informasi SQ, CQ, buffer pengguna, dan polling.
  */
 __cold void io_uring_show_fdinfo(struct seq_file *m, struct file *file)
 {

@@ -24,6 +24,8 @@ struct io_splice {
 	struct io_rsrc_node		*rsrc_node;
 };
 
+
+// Mempersiapkan operasi splice dengan memvalidasi dan menginisialisasi struktur io_splice.
 static int __io_splice_prep(struct io_kiocb *req,
 			    const struct io_uring_sqe *sqe)
 {
@@ -40,6 +42,7 @@ static int __io_splice_prep(struct io_kiocb *req,
 	return 0;
 }
 
+// Mempersiapkan operasi tee dengan memastikan offset input valid dan meneruskan ke __io_splice_prep.
 int io_tee_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 {
 	if (READ_ONCE(sqe->splice_off_in) || READ_ONCE(sqe->off))
@@ -47,6 +50,7 @@ int io_tee_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 	return __io_splice_prep(req, sqe);
 }
 
+// Membersihkan sumber daya yang terkait dengan operasi io_splice.
 void io_splice_cleanup(struct io_kiocb *req)
 {
 	struct io_splice *sp = io_kiocb_to_cmd(req, struct io_splice);
@@ -55,6 +59,7 @@ void io_splice_cleanup(struct io_kiocb *req)
 		io_put_rsrc_node(req->ctx, sp->rsrc_node);
 }
 
+// Mengambil file input untuk operasi splice, menangani file descriptor tetap jika diperlukan.
 static struct file *io_splice_get_file(struct io_kiocb *req,
 				       unsigned int issue_flags)
 {
@@ -78,6 +83,7 @@ static struct file *io_splice_get_file(struct io_kiocb *req,
 	return file;
 }
 
+// Menjalankan operasi tee, yang menggandakan data dari satu file ke file lain tanpa menyalin ke ruang pengguna.
 int io_tee(struct io_kiocb *req, unsigned int issue_flags)
 {
 	struct io_splice *sp = io_kiocb_to_cmd(req, struct io_splice);
@@ -106,6 +112,7 @@ done:
 	return IOU_OK;
 }
 
+// Mempersiapkan operasi splice dengan mengatur offset input dan output serta meneruskan ke __io_splice_prep.
 int io_splice_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 {
 	struct io_splice *sp = io_kiocb_to_cmd(req, struct io_splice);
@@ -115,6 +122,7 @@ int io_splice_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 	return __io_splice_prep(req, sqe);
 }
 
+// Menjalankan operasi splice, mentransfer data antara dua file menggunakan buffer kernel.
 int io_splice(struct io_kiocb *req, unsigned int issue_flags)
 {
 	struct io_splice *sp = io_kiocb_to_cmd(req, struct io_splice);

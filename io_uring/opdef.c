@@ -41,6 +41,10 @@
 
 static int io_no_issue(struct io_kiocb *req, unsigned int issue_flags)
 {
+	/**
+	 * Fungsi penanganan error untuk operasi yang tidak boleh dijalankan langsung.
+	 * Digunakan sebagai fallback ketika operasi tidak diharapkan dikeluarkan.
+	 */
 	WARN_ON_ONCE(1);
 	return -ECANCELED;
 }
@@ -48,6 +52,10 @@ static int io_no_issue(struct io_kiocb *req, unsigned int issue_flags)
 static __maybe_unused int io_eopnotsupp_prep(struct io_kiocb *kiocb,
 					     const struct io_uring_sqe *sqe)
 {
+	/**
+	 * Fungsi persiapan untuk operasi yang tidak didukung dalam konfigurasi kernel saat ini.
+	 * Selalu mengembalikan -EOPNOTSUPP untuk menunjukkan bahwa operasi tidak didukung.
+	 */
 	return -EOPNOTSUPP;
 }
 
@@ -819,6 +827,10 @@ const struct io_cold_def io_cold_defs[] = {
 
 const char *io_uring_get_opcode(u8 opcode)
 {
+	/**
+	 * Mendapatkan nama string dari kode operasi io_uring.
+	 * Mengembalikan nama operasi yang valid atau "INVALID" untuk opcode yang tidak dikenal.
+	 */
 	if (opcode < IORING_OP_LAST)
 		return io_cold_defs[opcode].name;
 	return "INVALID";
@@ -826,6 +838,10 @@ const char *io_uring_get_opcode(u8 opcode)
 
 bool io_uring_op_supported(u8 opcode)
 {
+	/**
+	 * Memeriksa apakah kode operasi didukung oleh kernel saat ini.
+	 * Mengembalikan true jika operasi didukung, false jika tidak.
+	 */
 	if (opcode < IORING_OP_LAST &&
 	    io_issue_defs[opcode].prep != io_eopnotsupp_prep)
 		return true;
@@ -834,6 +850,10 @@ bool io_uring_op_supported(u8 opcode)
 
 void __init io_uring_optable_init(void)
 {
+	/**
+	 * Melakukan inisialisasi tabel operasi io_uring pada saat boot.
+	 * Melakukan pemeriksaan konsistensi dan validitas definisi operasi.
+	 */
 	int i;
 
 	BUILD_BUG_ON(ARRAY_SIZE(io_cold_defs) != IORING_OP_LAST);
