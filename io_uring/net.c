@@ -104,6 +104,10 @@ static int io_sg_from_iter(struct sk_buff *skb,
 
 int io_shutdown_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 {
+	/**
+	 * Mempersiapkan operasi shutdown socket.
+	 * Memeriksa validitas parameter dan mengatur flag untuk eksekusi asinkron.
+	 */
 	struct io_shutdown *shutdown = io_kiocb_to_cmd(req, struct io_shutdown);
 
 	if (unlikely(sqe->off || sqe->addr || sqe->rw_flags ||
@@ -117,6 +121,10 @@ int io_shutdown_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 
 int io_shutdown(struct io_kiocb *req, unsigned int issue_flags)
 {
+	/**
+	 * Melakukan operasi shutdown pada socket.
+	 * Mengeksekusi penutupan socket sesuai dengan mode yang ditentukan.
+	 */
 	struct io_shutdown *shutdown = io_kiocb_to_cmd(req, struct io_shutdown);
 	struct socket *sock;
 	int ret;
@@ -134,6 +142,10 @@ int io_shutdown(struct io_kiocb *req, unsigned int issue_flags)
 
 static bool io_net_retry(struct socket *sock, int flags)
 {
+	/**
+	 * Menentukan apakah operasi jaringan perlu dicoba ulang.
+	 * Memeriksa tipe socket dan flag MSG_WAITALL untuk keputusan retry.
+	 */
 	if (!(flags & MSG_WAITALL))
 		return false;
 	return sock->type == SOCK_STREAM || sock->type == SOCK_SEQPACKET;
@@ -141,12 +153,20 @@ static bool io_net_retry(struct socket *sock, int flags)
 
 static void io_netmsg_iovec_free(struct io_async_msghdr *kmsg)
 {
+	/**
+	 * Membebaskan sumber daya iovec yang dialokasikan untuk pesan jaringan.
+	 * Menghindari kebocoran memori dengan memanggil io_vec_free jika iovec ada.
+	 */
 	if (kmsg->vec.iovec)
 		io_vec_free(&kmsg->vec);
 }
 
 static void io_netmsg_recycle(struct io_kiocb *req, unsigned int issue_flags)
 {
+	/**
+	 * Mendaur ulang struktur pesan jaringan untuk penggunaan kembali.
+	 * Mengoptimalkan penggunaan memori dengan memanfaatkan cache alokasi.
+	 */
 	struct io_async_msghdr *hdr = req->async_data;
 
 	/* can't recycle, ensure we free the iovec if we have one */
@@ -168,6 +188,10 @@ static void io_netmsg_recycle(struct io_kiocb *req, unsigned int issue_flags)
 
 static struct io_async_msghdr *io_msg_alloc_async(struct io_kiocb *req)
 {
+	/**
+	 * Mengalokasikan struktur async_msghdr untuk operasi pesan jaringan.
+	 * Menggunakan cache alokasi untuk meningkatkan performa.
+	 */
 	struct io_ring_ctx *ctx = req->ctx;
 	struct io_async_msghdr *hdr;
 
@@ -184,6 +208,10 @@ static struct io_async_msghdr *io_msg_alloc_async(struct io_kiocb *req)
 static inline void io_mshot_prep_retry(struct io_kiocb *req,
 				       struct io_async_msghdr *kmsg)
 {
+	/**
+	 * Mempersiapkan permintaan multishot untuk percobaan ulang.
+	 * Mereset status permintaan dan mengatur ulang parameter buffer.
+	 */
 	struct io_sr_msg *sr = io_kiocb_to_cmd(req, struct io_sr_msg);
 
 	req->flags &= ~REQ_F_BL_EMPTY;
@@ -197,6 +225,10 @@ static int io_net_import_vec(struct io_kiocb *req, struct io_async_msghdr *iomsg
 			     const struct iovec __user *uiov, unsigned uvec_seg,
 			     int ddir)
 {
+	/**
+	 * Mengimpor vektor I/O dari ruang pengguna untuk operasi jaringan.
+	 * Menangani alokasi dan inisialisasi vektor untuk transfer data.
+	 */
 	struct iovec *iov;
 	int ret, nr_segs;
 
@@ -225,6 +257,10 @@ static int io_compat_msg_copy_hdr(struct io_kiocb *req,
 				  struct compat_msghdr *msg, int ddir,
 				  struct sockaddr __user **save_addr)
 {
+	/**
+	 * Menyalin header pesan kompatibilitas dari ruang pengguna.
+	 * Menangani kompatibilitas untuk sistem 32-bit pada sistem 64-bit.
+	 */
 	struct io_sr_msg *sr = io_kiocb_to_cmd(req, struct io_sr_msg);
 	struct compat_iovec __user *uiov;
 	int ret;
@@ -256,6 +292,10 @@ static int io_compat_msg_copy_hdr(struct io_kiocb *req,
 static int io_copy_msghdr_from_user(struct user_msghdr *msg,
 				    struct user_msghdr __user *umsg)
 {
+	/**
+	 * Menyalin header pesan dari ruang pengguna ke ruang kernel.
+	 * Menggunakan akses pengguna yang aman untuk mencegah race condition.
+	 */
 	if (!user_access_begin(umsg, sizeof(*umsg)))
 		return -EFAULT;
 	unsafe_get_user(msg->msg_name, &umsg->msg_name, ua_end);
@@ -275,6 +315,10 @@ static int io_msg_copy_hdr(struct io_kiocb *req, struct io_async_msghdr *iomsg,
 			   struct user_msghdr *msg, int ddir,
 			   struct sockaddr __user **save_addr)
 {
+	/**
+	 * Menyalin dan memproses header pesan dari ruang pengguna.
+	 * Menangani perbedaan format antara ruang pengguna dan kernel.
+	 */
 	struct io_sr_msg *sr = io_kiocb_to_cmd(req, struct io_sr_msg);
 	struct user_msghdr __user *umsg = sr->umsg;
 	int ret;
@@ -326,6 +370,10 @@ static int io_msg_copy_hdr(struct io_kiocb *req, struct io_async_msghdr *iomsg,
 
 void io_sendmsg_recvmsg_cleanup(struct io_kiocb *req)
 {
+	/**
+	 * Membersihkan sumber daya yang dialokasikan untuk operasi sendmsg/recvmsg.
+	 * Membebaskan iovec dan struktur data terkait.
+	 */
 	struct io_async_msghdr *io = req->async_data;
 
 	io_netmsg_iovec_free(io);
@@ -333,6 +381,10 @@ void io_sendmsg_recvmsg_cleanup(struct io_kiocb *req)
 
 static int io_send_setup(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 {
+	/**
+	 * Menyiapkan operasi pengiriman data jaringan.
+	 * Mengatur buffer, alamat tujuan, dan parameter terkait.
+	 */
 	struct io_sr_msg *sr = io_kiocb_to_cmd(req, struct io_sr_msg);
 	struct io_async_msghdr *kmsg = req->async_data;
 	void __user *addr;
@@ -372,6 +424,10 @@ static int io_send_setup(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 
 static int io_sendmsg_setup(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 {
+	/**
+	 * Menyiapkan operasi pengiriman pesan jaringan.
+	 * Menyalin header pesan dan mengimpor vektor I/O dari pengguna.
+	 */
 	struct io_sr_msg *sr = io_kiocb_to_cmd(req, struct io_sr_msg);
 	struct io_async_msghdr *kmsg = req->async_data;
 	struct user_msghdr msg;
@@ -398,6 +454,10 @@ static int io_sendmsg_setup(struct io_kiocb *req, const struct io_uring_sqe *sqe
 
 int io_sendmsg_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 {
+	/**
+	 * Mempersiapkan permintaan sendmsg dari antrian submission.
+	 * Mengekstrak dan memvalidasi parameter dari SQE.
+	 */
 	struct io_sr_msg *sr = io_kiocb_to_cmd(req, struct io_sr_msg);
 
 	sr->done_io = 0;
@@ -435,6 +495,10 @@ int io_sendmsg_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 static void io_req_msg_cleanup(struct io_kiocb *req,
 			       unsigned int issue_flags)
 {
+	/**
+	 * Membersihkan sumber daya permintaan pesan.
+	 * Mendaur ulang struktur pesan melalui io_netmsg_recycle.
+	 */
 	io_netmsg_recycle(req, issue_flags);
 }
 
@@ -448,6 +512,10 @@ static void io_req_msg_cleanup(struct io_kiocb *req,
  */
 static int io_bundle_nbufs(struct io_async_msghdr *kmsg, int ret)
 {
+	/**
+	 * Menghitung jumlah buffer yang dikonsumsi dalam operasi bundel.
+	 * Penting untuk penyelesaian bundel dan pelaporan hasil.
+	 */
 	struct iovec *iov;
 	int nbufs;
 

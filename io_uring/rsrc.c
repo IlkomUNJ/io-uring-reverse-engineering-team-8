@@ -37,6 +37,10 @@ static struct io_rsrc_node *io_sqe_buffer_register(struct io_ring_ctx *ctx,
 
 int __io_account_mem(struct user_struct *user, unsigned long nr_pages)
 {
+	/**
+	 * Menghitung dan membatasi alokasi memori pengguna.
+	 * Memastikan batas rlimit MEMLOCK tidak terlampaui.
+	 */
 	unsigned long page_limit, cur_pages, new_pages;
 
 	if (!nr_pages)
@@ -57,6 +61,10 @@ int __io_account_mem(struct user_struct *user, unsigned long nr_pages)
 
 static void io_unaccount_mem(struct io_ring_ctx *ctx, unsigned long nr_pages)
 {
+	/**
+	 * Membebaskan perhitungan memori yang telah digunakan.
+	 * Mengurangi jumlah halaman dari hitungan pengguna dan mm_account.
+	 */
 	if (ctx->user)
 		__io_unaccount_mem(ctx->user, nr_pages);
 
@@ -66,6 +74,10 @@ static void io_unaccount_mem(struct io_ring_ctx *ctx, unsigned long nr_pages)
 
 static int io_account_mem(struct io_ring_ctx *ctx, unsigned long nr_pages)
 {
+	/**
+	 * Menghitung alokasi memori untuk konteks io_uring.
+	 * Menambahkan jumlah halaman ke hitungan pengguna dan mm_account.
+	 */
 	int ret;
 
 	if (ctx->user) {
@@ -82,6 +94,10 @@ static int io_account_mem(struct io_ring_ctx *ctx, unsigned long nr_pages)
 
 int io_buffer_validate(struct iovec *iov)
 {
+	/**
+	 * Memvalidasi buffer pengguna untuk operasi io_uring.
+	 * Memeriksa alamat, panjang, dan potensi overflow.
+	 */
 	unsigned long tmp, acct_len = iov->iov_len + (PAGE_SIZE - 1);
 
 	/*
@@ -106,6 +122,10 @@ int io_buffer_validate(struct iovec *iov)
 
 static void io_release_ubuf(void *priv)
 {
+	/**
+	 * Melepaskan buffer pengguna yang telah dipetakan.
+	 * Melepaskan halaman-halaman yang telah di-pin.
+	 */
 	struct io_mapped_ubuf *imu = priv;
 	unsigned int i;
 
@@ -116,6 +136,10 @@ static void io_release_ubuf(void *priv)
 static struct io_mapped_ubuf *io_alloc_imu(struct io_ring_ctx *ctx,
 					   int nr_bvecs)
 {
+	/**
+	 * Mengalokasikan struktur io_mapped_ubuf.
+	 * Menggunakan cache alokasi untuk ukuran kecil dan kvmalloc untuk ukuran besar.
+	 */
 	if (nr_bvecs <= IO_CACHED_BVECS_SEGS)
 		return io_cache_alloc(&ctx->imu_cache, GFP_KERNEL);
 	return kvmalloc(struct_size_t(struct io_mapped_ubuf, bvec, nr_bvecs),
@@ -124,6 +148,10 @@ static struct io_mapped_ubuf *io_alloc_imu(struct io_ring_ctx *ctx,
 
 static void io_free_imu(struct io_ring_ctx *ctx, struct io_mapped_ubuf *imu)
 {
+	/**
+	 * Membebaskan struktur io_mapped_ubuf.
+	 * Menggunakan cache alokasi untuk ukuran kecil dan kvfree untuk ukuran besar.
+	 */
 	if (imu->nr_bvecs <= IO_CACHED_BVECS_SEGS)
 		io_cache_free(&ctx->imu_cache, imu);
 	else
@@ -132,6 +160,10 @@ static void io_free_imu(struct io_ring_ctx *ctx, struct io_mapped_ubuf *imu)
 
 static void io_buffer_unmap(struct io_ring_ctx *ctx, struct io_mapped_ubuf *imu)
 {
+	/**
+	 * Membatalkan pemetaan buffer pengguna.
+	 * Mengurangi referensi dan membebaskan sumber daya jika tidak digunakan lagi.
+	 */
 	if (!refcount_dec_and_test(&imu->refs))
 		return;
 
@@ -143,6 +175,10 @@ static void io_buffer_unmap(struct io_ring_ctx *ctx, struct io_mapped_ubuf *imu)
 
 struct io_rsrc_node *io_rsrc_node_alloc(struct io_ring_ctx *ctx, int type)
 {
+	/**
+	 * Mengalokasikan node sumber daya untuk io_uring.
+	 * Menginisialisasi node dengan tipe dan referensi awal.
+	 */
 	struct io_rsrc_node *node;
 
 	node = io_cache_alloc(&ctx->node_cache, GFP_KERNEL);
@@ -157,6 +193,10 @@ struct io_rsrc_node *io_rsrc_node_alloc(struct io_ring_ctx *ctx, int type)
 
 bool io_rsrc_cache_init(struct io_ring_ctx *ctx)
 {
+	/**
+	 * Menginisialisasi cache sumber daya untuk konteks io_uring.
+	 * Membuat cache untuk node dan imu dengan ukuran yang sesuai.
+	 */
 	const int imu_cache_size = struct_size_t(struct io_mapped_ubuf, bvec,
 						 IO_CACHED_BVECS_SEGS);
 	const int node_size = sizeof(struct io_rsrc_node);
@@ -171,6 +211,10 @@ bool io_rsrc_cache_init(struct io_ring_ctx *ctx)
 
 void io_rsrc_cache_free(struct io_ring_ctx *ctx)
 {
+	/**
+	 * Membebaskan cache sumber daya untuk konteks io_uring.
+	 * Membersihkan cache node dan imu.
+	 */
 	io_alloc_cache_free(&ctx->node_cache, kfree);
 	io_alloc_cache_free(&ctx->imu_cache, kfree);
 }
@@ -178,6 +222,10 @@ void io_rsrc_cache_free(struct io_ring_ctx *ctx)
 __cold void io_rsrc_data_free(struct io_ring_ctx *ctx,
 			      struct io_rsrc_data *data)
 {
+	/**
+	 * Membebaskan data sumber daya io_uring.
+	 * Mengurangi referensi semua node yang terkait dan membebaskan array.
+	 */
 	if (!data->nr)
 		return;
 	while (data->nr--) {
@@ -191,6 +239,10 @@ __cold void io_rsrc_data_free(struct io_ring_ctx *ctx,
 
 __cold int io_rsrc_data_alloc(struct io_rsrc_data *data, unsigned nr)
 {
+	/**
+	 * Mengalokasikan data sumber daya io_uring.
+	 * Membuat array untuk menyimpan pointer node sumber daya.
+	 */
 	data->nodes = kvmalloc_array(nr, sizeof(struct io_rsrc_node *),
 					GFP_KERNEL_ACCOUNT | __GFP_ZERO);
 	if (data->nodes) {

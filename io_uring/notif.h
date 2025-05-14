@@ -24,34 +24,55 @@ struct io_notif_data {
 };
 
 struct io_kiocb *io_alloc_notif(struct io_ring_ctx *ctx);
+/**
+ * Alokasikan struktur notif untuk io_uring.
+ * Mengembalikan pointer ke struktur notif yang dialokasikan.
+ */
+
 void io_tx_ubuf_complete(struct sk_buff *skb, struct ubuf_info *uarg,
-			 bool success);
+             bool success);
+/**
+ * Selesaikan transfer buffer zerocopy.
+ * Memastikan buffer telah diproses dengan sukses atau gagal.
+ */
 
 static inline struct io_notif_data *io_notif_to_data(struct io_kiocb *notif)
+/**
+ * Konversi struktur notif menjadi data notif.
+ * Mengembalikan pointer ke data notif yang terkait.
+ */
 {
-	return io_kiocb_to_cmd(notif, struct io_notif_data);
+    return io_kiocb_to_cmd(notif, struct io_notif_data);
 }
 
 static inline void io_notif_flush(struct io_kiocb *notif)
-	__must_hold(&notif->ctx->uring_lock)
+    __must_hold(&notif->ctx->uring_lock)
+/**
+ * Flush data notif.
+ * Memastikan semua buffer zerocopy selesai diproses.
+ */
 {
-	struct io_notif_data *nd = io_notif_to_data(notif);
+    struct io_notif_data *nd = io_notif_to_data(notif);
 
-	io_tx_ubuf_complete(NULL, &nd->uarg, true);
+    io_tx_ubuf_complete(NULL, &nd->uarg, true);
 }
 
 static inline int io_notif_account_mem(struct io_kiocb *notif, unsigned len)
+/**
+ * Akun memori untuk notif.
+ * Menambahkan jumlah halaman yang digunakan ke akun pengguna.
+ */
 {
-	struct io_ring_ctx *ctx = notif->ctx;
-	struct io_notif_data *nd = io_notif_to_data(notif);
-	unsigned nr_pages = (len >> PAGE_SHIFT) + 2;
-	int ret;
+    struct io_ring_ctx *ctx = notif->ctx;
+    struct io_notif_data *nd = io_notif_to_data(notif);
+    unsigned nr_pages = (len >> PAGE_SHIFT) + 2;
+    int ret;
 
-	if (ctx->user) {
-		ret = __io_account_mem(ctx->user, nr_pages);
-		if (ret)
-			return ret;
-		nd->account_pages += nr_pages;
-	}
-	return 0;
+    if (ctx->user) {
+        ret = __io_account_mem(ctx->user, nr_pages);
+        if (ret)
+            return ret;
+        nd->account_pages += nr_pages;
+    }
+    return 0;
 }

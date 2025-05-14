@@ -23,6 +23,10 @@ struct io_nop {
 			 IORING_NOP_FIXED_BUFFER | IORING_NOP_FILE)
 
 int io_nop_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
+/**
+ * Siapkan operasi NOP (no operation).
+ * Menginisialisasi struktur permintaan tanpa melakukan operasi.
+ */
 {
 	struct io_nop *nop = io_kiocb_to_cmd(req, struct io_nop);
 
@@ -44,6 +48,10 @@ int io_nop_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 }
 
 int io_nop(struct io_kiocb *req, unsigned int issue_flags)
+/**
+ * Eksekusi operasi NOP (no operation).
+ * Tidak melakukan apa-apa dan langsung menyelesaikan permintaan.
+ */
 {
 	struct io_nop *nop = io_kiocb_to_cmd(req, struct io_nop);
 	int ret = nop->result;
