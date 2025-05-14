@@ -153,39 +153,67 @@ static bool io_acct_cancel_pending_work(struct io_wq *wq,
 static void create_worker_cb(struct callback_head *cb);
 static void io_wq_cancel_tw_create(struct io_wq *wq);
 
+/**
+ * Mencoba meningkatkan penghitung referensi worker jika worker masih aktif
+ * Menambah jumlah referensi pekerja IO dan mengembalikan status keberhasilan
+ */
 static bool io_worker_get(struct io_worker *worker)
 {
 	return refcount_inc_not_zero(&worker->ref);
 }
 
+/**
+ * Mengurangi penghitung referensi worker dan menyelesaikan kompletion jika mencapai nol
+ * Menurunkan jumlah referensi pekerja dan menandai bahwa pekerja telah selesai jika referensinya menjadi nol
+ */
 static void io_worker_release(struct io_worker *worker)
 {
 	if (refcount_dec_and_test(&worker->ref))
 		complete(&worker->ref_done);
 }
 
+/**
+ * Mendapatkan akun io_wq berdasarkan flag terikat atau tidak terikat
+ * Mengembalikan pointer ke struktur akuntansi berdasarkan status terikat/tidak terikat
+ */
 static inline struct io_wq_acct *io_get_acct(struct io_wq *wq, bool bound)
 {
 	return &wq->acct[bound ? IO_WQ_ACCT_BOUND : IO_WQ_ACCT_UNBOUND];
 }
 
+/**
+ * Mendapatkan akun io_wq dari flag pekerjaan
+ * Mengembalikan struktur akuntansi berdasarkan flag pekerjaan
+ */
 static inline struct io_wq_acct *io_work_get_acct(struct io_wq *wq,
 						  unsigned int work_flags)
 {
 	return io_get_acct(wq, !(work_flags & IO_WQ_WORK_UNBOUND));
 }
 
+/**
+ * Mendapatkan akun io_wq yang terkait dengan worker
+ * Mengembalikan akun yang diasosiasikan dengan pekerja tertentu
+ */
 static inline struct io_wq_acct *io_wq_get_acct(struct io_worker *worker)
 {
 	return worker->acct;
 }
 
+/**
+ * Mengurangi referensi worker dan menyelesaikan kompletion jika semua worker selesai
+ * Menurunkan jumlah referensi pekerja dan menyelesaikan worker_done jika mencapai nol
+ */
 static void io_worker_ref_put(struct io_wq *wq)
 {
 	if (atomic_dec_and_test(&wq->worker_refs))
 		complete(&wq->worker_done);
 }
 
+/**
+ * Memeriksa apakah worker saat ini telah dihentikan
+ * Mengembalikan true jika worker sekarang dalam keadaan berhenti atau thread bukan io_worker
+ */
 bool io_wq_worker_stopped(void)
 {
 	struct io_worker *worker = current->worker_private;
@@ -196,6 +224,10 @@ bool io_wq_worker_stopped(void)
 	return test_bit(IO_WQ_BIT_EXIT, &worker->wq->state);
 }
 
+/**
+ * Membatalkan callback worker
+ * Membersihkan state worker ketika pembuatan worker dibatalkan
+ */
 static void io_worker_cancel_cb(struct io_worker *worker)
 {
 	struct io_wq_acct *acct = io_wq_get_acct(worker);
@@ -210,6 +242,10 @@ static void io_worker_cancel_cb(struct io_worker *worker)
 	io_worker_release(worker);
 }
 
+/**
+ * Memeriksa kecocokan callback task_work dengan worker tertentu
+ * Mengembalikan true jika callback adalah create_worker_cb dan worker cocok dengan data
+ */
 static bool io_task_worker_match(struct callback_head *cb, void *data)
 {
 	struct io_worker *worker;
@@ -220,6 +256,10 @@ static bool io_task_worker_match(struct callback_head *cb, void *data)
 	return worker == data;
 }
 
+/**
+ * Menangani exit worker dari thread pool
+ * Membersihkan worker ketika akan keluar dan membebaskan sumber daya
+ */
 static void io_worker_exit(struct io_worker *worker)
 {
 	struct io_wq *wq = worker->wq;
@@ -255,15 +295,19 @@ static void io_worker_exit(struct io_worker *worker)
 	do_exit(0);
 }
 
+/**
+ * Memeriksa apakah antrian kerja dapat dijalankan
+ * Mengembalikan true jika antrian tidak macet dan tidak kosong
+ */
 static inline bool __io_acct_run_queue(struct io_wq_acct *acct)
 {
 	return !test_bit(IO_ACCT_STALLED_BIT, &acct->flags) &&
 		!wq_list_empty(&acct->work_list);
 }
 
-/*
- * If there's work to do, returns true with acct->lock acquired. If not,
- * returns false with no lock held.
+/**
+ * Memeriksa dan mengunci antrian kerja jika ada pekerjaan
+ * Mengembalikan true dan mengunci acct->lock jika ada pekerjaan, false jika tidak
  */
 static inline bool io_acct_run_queue(struct io_wq_acct *acct)
 	__acquires(&acct->lock)
@@ -276,9 +320,9 @@ static inline bool io_acct_run_queue(struct io_wq_acct *acct)
 	return false;
 }
 
-/*
- * Check head of free list for an available worker. If one isn't available,
- * caller must create one.
+/**
+ * Mengaktifkan worker idle dari free list
+ * Mencari worker idle dan membangunkannya untuk menjalankan tugas
  */
 static bool io_acct_activate_free_worker(struct io_wq_acct *acct)
 	__must_hold(RCU)
@@ -307,9 +351,9 @@ static bool io_acct_activate_free_worker(struct io_wq_acct *acct)
 	return false;
 }
 
-/*
- * We need a worker. If we find a free one, we're good. If not, and we're
- * below the max number of workers, create one.
+/**
+ * Membuat worker baru jika diperlukan
+ * Memeriksa batas worker dan membuat worker baru jika masih di bawah batas
  */
 static bool io_wq_create_worker(struct io_wq *wq, struct io_wq_acct *acct)
 {
@@ -332,6 +376,10 @@ static bool io_wq_create_worker(struct io_wq *wq, struct io_wq_acct *acct)
 	return create_io_worker(wq, acct);
 }
 
+/**
+ * Menambah jumlah worker yang berjalan
+ * Meningkatkan counter worker yang sedang aktif berjalan
+ */
 static void io_wq_inc_running(struct io_worker *worker)
 {
 	struct io_wq_acct *acct = io_wq_get_acct(worker);
@@ -339,6 +387,10 @@ static void io_wq_inc_running(struct io_worker *worker)
 	atomic_inc(&acct->nr_running);
 }
 
+/**
+ * Callback untuk pembuatan worker
+ * Menangani pembuatan worker baru saat diperlukan melalui mekanisme callback
+ */
 static void create_worker_cb(struct callback_head *cb)
 {
 	struct io_worker *worker;
@@ -367,6 +419,10 @@ static void create_worker_cb(struct callback_head *cb)
 	io_worker_release(worker);
 }
 
+/**
+ * Mengantri permintaan pembuatan worker
+ * Menginisialisasi dan mengantri task_work untuk pembuatan worker
+ */
 static bool io_queue_worker_create(struct io_worker *worker,
 				   struct io_wq_acct *acct,
 				   task_work_func_t func)
@@ -412,6 +468,10 @@ fail:
 	return false;
 }
 
+/**
+ * Mengurangi jumlah worker yang berjalan
+ * Menurunkan counter worker yang sedang aktif dan membuat worker baru jika tidak ada lagi yang berjalan tapi masih ada pekerjaan
+ */
 static void io_wq_dec_running(struct io_worker *worker)
 {
 	struct io_wq_acct *acct = io_wq_get_acct(worker);
@@ -431,9 +491,9 @@ static void io_wq_dec_running(struct io_worker *worker)
 	io_queue_worker_create(worker, acct, create_worker_cb);
 }
 
-/*
- * Worker will start processing some work. Move it to the busy list, if
- * it's currently on the freelist
+/**
+ * Menandai worker sebagai sibuk saat mulai memproses pekerjaan
+ * Mengubah status worker dari free menjadi busy dan menghapusnya dari free_list
  */
 static void __io_worker_busy(struct io_wq_acct *acct, struct io_worker *worker)
 {
@@ -445,8 +505,9 @@ static void __io_worker_busy(struct io_wq_acct *acct, struct io_worker *worker)
 	}
 }
 
-/*
- * No work, worker going to sleep. Move to freelist.
+/**
+ * Menandai worker sebagai idle karena tidak ada pekerjaan
+ * Mengubah status worker menjadi free dan memasukkannya ke daftar free_list
  */
 static void __io_worker_idle(struct io_wq_acct *acct, struct io_worker *worker)
 	__must_hold(acct->workers_lock)
@@ -457,16 +518,28 @@ static void __io_worker_idle(struct io_wq_acct *acct, struct io_worker *worker)
 	}
 }
 
+/**
+ * Mendapatkan nilai hash dari flags pekerjaan
+ * Mengekstrak nilai hash dari flag pekerjaan untuk identifikasi
+ */
 static inline unsigned int __io_get_work_hash(unsigned int work_flags)
 {
 	return work_flags >> IO_WQ_HASH_SHIFT;
 }
 
+/**
+ * Mendapatkan nilai hash dari struktur pekerjaan
+ * Mendapatkan hash dari pekerjaan untuk pengelompokan eksekusi
+ */
 static inline unsigned int io_get_work_hash(struct io_wq_work *work)
 {
 	return __io_get_work_hash(atomic_read(&work->flags));
 }
 
+/**
+ * Menunggu pada antrian hash tertentu
+ * Menambahkan waiter ke hash tertentu dan mengembalikan status keberhasilan
+ */
 static bool io_wait_on_hash(struct io_wq *wq, unsigned int hash)
 {
 	bool ret = false;
@@ -484,6 +557,10 @@ static bool io_wait_on_hash(struct io_wq *wq, unsigned int hash)
 	return ret;
 }
 
+/**
+ * Mendapatkan pekerjaan berikutnya untuk diproses
+ * Mencari dan mengambil pekerjaan berikutnya dari antrian, memperhatikan aturan hash
+ */
 static struct io_wq_work *io_get_next_work(struct io_wq_acct *acct,
 					   struct io_wq *wq)
 	__must_hold(acct->lock)
@@ -542,6 +619,10 @@ static struct io_wq_work *io_get_next_work(struct io_wq_acct *acct,
 	return NULL;
 }
 
+/**
+ * Mengatur pekerjaan saat ini untuk worker
+ * Memperbarui pekerjaan aktif pada worker dan menjalankan task work jika ada
+ */
 static void io_assign_current_work(struct io_worker *worker,
 				   struct io_wq_work *work)
 {
@@ -555,8 +636,9 @@ static void io_assign_current_work(struct io_worker *worker,
 	raw_spin_unlock(&worker->lock);
 }
 
-/*
- * Called with acct->lock held, drops it before returning
+/**
+ * Menangani pekerjaan untuk worker
+ * Memproses pekerjaan yang diberikan kepada worker, mengelola dependensi dan status
  */
 static void io_worker_handle_work(struct io_wq_acct *acct,
 				  struct io_worker *worker)
@@ -642,6 +724,10 @@ static void io_worker_handle_work(struct io_wq_acct *acct,
 	} while (1);
 }
 
+/**
+ * Fungsi utama thread worker io_wq
+ * Menjalankan loop utama worker yang memproses pekerjaan dan mengelola status idle
+ */
 static int io_wq_worker(void *data)
 {
 	struct io_worker *worker = data;
@@ -706,8 +792,9 @@ static int io_wq_worker(void *data)
 	return 0;
 }
 
-/*
- * Called when a worker is scheduled in. Mark us as currently running.
+/**
+ * Dipanggil saat worker dijadwalkan, menandai worker sebagai berjalan
+ * Memperbarui status worker saat mulai dieksekusi oleh scheduler
  */
 void io_wq_worker_running(struct task_struct *tsk)
 {
@@ -723,9 +810,9 @@ void io_wq_worker_running(struct task_struct *tsk)
 	io_wq_inc_running(worker);
 }
 
-/*
- * Called when worker is going to sleep. If there are no workers currently
- * running and we have work pending, wake up a free one or create a new one.
+/**
+ * Dipanggil saat worker akan tidur
+ * Menangani worker yang akan tidur, memungkinkan penciptaan worker baru jika diperlukan
  */
 void io_wq_worker_sleeping(struct task_struct *tsk)
 {
@@ -742,6 +829,10 @@ void io_wq_worker_sleeping(struct task_struct *tsk)
 	io_wq_dec_running(worker);
 }
 
+/**
+ * Menginisialisasi worker baru dan mengaitkannya dengan task
+ * Menyiapkan worker baru agar siap untuk digunakan
+ */
 static void io_init_new_worker(struct io_wq *wq, struct io_wq_acct *acct, struct io_worker *worker,
 			       struct task_struct *tsk)
 {
@@ -757,11 +848,19 @@ static void io_init_new_worker(struct io_wq *wq, struct io_wq_acct *acct, struct
 	wake_up_new_task(tsk);
 }
 
+/**
+ * Fungsi kecocokan yang selalu mengembalikan true untuk semua pekerjaan
+ * Digunakan untuk operasi pembatalan yang memengaruhi semua pekerjaan
+ */
 static bool io_wq_work_match_all(struct io_wq_work *work, void *data)
 {
 	return true;
 }
 
+/**
+ * Memeriksa apakah harus mencoba kembali pembuatan thread
+ * Menentukan apakah kita harus mencoba membuat worker lagi berdasarkan jenis error
+ */
 static inline bool io_should_retry_thread(struct io_worker *worker, long err)
 {
 	/*
@@ -784,6 +883,10 @@ static inline bool io_should_retry_thread(struct io_worker *worker, long err)
 	}
 }
 
+/**
+ * Menjadwalkan pembuatan worker untuk dicoba lagi
+ * Menambah tugas pembuatan worker ke work queue untuk dicoba kembali nanti
+ */
 static void queue_create_worker_retry(struct io_worker *worker)
 {
 	/*
@@ -796,6 +899,10 @@ static void queue_create_worker_retry(struct io_worker *worker)
 			      msecs_to_jiffies(worker->init_retries * 5));
 }
 
+/**
+ * Melanjutkan proses pembuatan worker
+ * Menyelesaikan pembuatan worker yang ditunda dan menangani error
+ */
 static void create_worker_cont(struct callback_head *cb)
 {
 	struct io_worker *worker;
@@ -838,6 +945,10 @@ static void create_worker_cont(struct callback_head *cb)
 	queue_create_worker_retry(worker);
 }
 
+/**
+ * Menangani pembuatan worker melalui work queue
+ * Memproses permintaan pembuatan worker dari workqueue system
+ */
 static void io_workqueue_create(struct work_struct *work)
 {
 	struct io_worker *worker = container_of(work, struct io_worker,
@@ -848,6 +959,10 @@ static void io_workqueue_create(struct work_struct *work)
 		kfree(worker);
 }
 
+/**
+ * Membuat worker IO baru
+ * Menginisialisasi dan membuat worker baru untuk menangani pekerjaan IO
+ */
 static bool create_io_worker(struct io_wq *wq, struct io_wq_acct *acct)
 {
 	struct io_worker *worker;
@@ -886,9 +1001,9 @@ fail:
 	return true;
 }
 
-/*
- * Iterate the passed in list and call the specific function for each
- * worker that isn't exiting
+/**
+ * Iterasi semua worker dalam akun dan memanggil fungsi yang diberikan
+ * Memanggil fungsi tertentu untuk setiap worker yang tidak sedang keluar
  */
 static bool io_acct_for_each_worker(struct io_wq_acct *acct,
 				    bool (*func)(struct io_worker *, void *),
@@ -911,6 +1026,10 @@ static bool io_acct_for_each_worker(struct io_wq_acct *acct,
 	return ret;
 }
 
+/**
+ * Iterasi semua worker dalam wq dan memanggil fungsi yang diberikan
+ * Memanggil fungsi tertentu untuk semua worker di kedua akun (bound dan unbound)
+ */
 static bool io_wq_for_each_worker(struct io_wq *wq,
 				  bool (*func)(struct io_worker *, void *),
 				  void *data)
@@ -923,6 +1042,10 @@ static bool io_wq_for_each_worker(struct io_wq *wq,
 	return true;
 }
 
+/**
+ * Membangunkan worker dari status tidur
+ * Mengirim sinyal ke worker untuk membangunkannya
+ */
 static bool io_wq_worker_wake(struct io_worker *worker, void *data)
 {
 	__set_notify_signal(worker->task);
@@ -930,6 +1053,10 @@ static bool io_wq_worker_wake(struct io_worker *worker, void *data)
 	return false;
 }
 
+/**
+ * Menjalankan pembatalan pekerjaan
+ * Menandai pekerjaan untuk dibatalkan dan memproses pekerjaan tersebut
+ */
 static void io_run_cancel(struct io_wq_work *work, struct io_wq *wq)
 {
 	do {
@@ -939,6 +1066,10 @@ static void io_run_cancel(struct io_wq_work *work, struct io_wq *wq)
 	} while (work);
 }
 
+/**
+ * Menyisipkan pekerjaan ke dalam antrian wq
+ * Menambahkan pekerjaan ke antrian dengan memperhatikan aturan hash
+ */
 static void io_wq_insert_work(struct io_wq *wq, struct io_wq_acct *acct,
 			      struct io_wq_work *work, unsigned int work_flags)
 {
@@ -960,11 +1091,19 @@ append:
 	wq_list_add_after(&work->list, &tail->list, &acct->work_list);
 }
 
+/**
+ * Fungsi kecocokan untuk item pekerjaan tertentu
+ * Memeriksa apakah pekerjaan cocok dengan item tertentu
+ */
 static bool io_wq_work_match_item(struct io_wq_work *work, void *data)
 {
 	return work == data;
 }
 
+/**
+ * Mengantri pekerjaan ke work queue
+ * Memasukkan pekerjaan baru ke dalam antrian dan membangunkan atau membuat worker bila perlu
+ */
 void io_wq_enqueue(struct io_wq *wq, struct io_wq_work *work)
 {
 	unsigned int work_flags = atomic_read(&work->flags);
@@ -1015,9 +1154,9 @@ void io_wq_enqueue(struct io_wq *wq, struct io_wq_work *work)
 	}
 }
 
-/*
- * Work items that hash to the same value will not be done in parallel.
- * Used to limit concurrent writes, generally hashed by inode.
+/**
+ * Mengatur hash untuk pekerjaan
+ * Menetapkan hash untuk pekerjaan agar pekerjaan sejenis tidak dijalankan secara paralel
  */
 void io_wq_hash_work(struct io_wq_work *work, void *val)
 {
@@ -1027,6 +1166,10 @@ void io_wq_hash_work(struct io_wq_work *work, void *val)
 	atomic_or(IO_WQ_WORK_HASHED | (bit << IO_WQ_HASH_SHIFT), &work->flags);
 }
 
+/**
+ * Membatalkan pekerjaan pada worker tertentu
+ * Menandai pekerjaan aktif pada worker untuk dibatalkan
+ */
 static bool __io_wq_worker_cancel(struct io_worker *worker,
 				  struct io_cb_cancel_data *match,
 				  struct io_wq_work *work)
@@ -1040,6 +1183,10 @@ static bool __io_wq_worker_cancel(struct io_worker *worker,
 	return false;
 }
 
+/**
+ * Membatalkan pekerjaan pada worker
+ * Mencari dan membatalkan pekerjaan yang sedang berjalan pada worker
+ */
 static bool io_wq_worker_cancel(struct io_worker *worker, void *data)
 {
 	struct io_cb_cancel_data *match = data;
@@ -1056,6 +1203,10 @@ static bool io_wq_worker_cancel(struct io_worker *worker, void *data)
 	return match->nr_running && !match->cancel_all;
 }
 
+/**
+ * Menghapus pekerjaan tertunda dari antrian
+ * Menangani penghapusan pekerjaan dan memperbarui hash_tail jika diperlukan
+ */
 static inline void io_wq_remove_pending(struct io_wq *wq,
 					struct io_wq_acct *acct,
 					 struct io_wq_work *work,
@@ -1075,6 +1226,10 @@ static inline void io_wq_remove_pending(struct io_wq *wq,
 	wq_list_del(&acct->work_list, &work->list, prev);
 }
 
+/**
+ * Membatalkan pekerjaan tertunda dalam akun tertentu
+ * Mencari dan membatalkan pekerjaan yang cocok dengan kriteria pembatalan
+ */
 static bool io_acct_cancel_pending_work(struct io_wq *wq,
 					struct io_wq_acct *acct,
 					struct io_cb_cancel_data *match)
@@ -1099,6 +1254,10 @@ static bool io_acct_cancel_pending_work(struct io_wq *wq,
 	return false;
 }
 
+/**
+ * Membatalkan pekerjaan tertunda di semua akun
+ * Menjalankan pembatalan pada pekerjaan tertunda di seluruh jenis akun
+ */
 static void io_wq_cancel_pending_work(struct io_wq *wq,
 				      struct io_cb_cancel_data *match)
 {
@@ -1115,6 +1274,10 @@ retry:
 	}
 }
 
+/**
+ * Membatalkan pekerjaan yang sedang berjalan dalam akun tertentu
+ * Menemukan dan membatalkan pekerjaan yang sedang dijalankan oleh worker
+ */
 static void io_acct_cancel_running_work(struct io_wq_acct *acct,
 					struct io_cb_cancel_data *match)
 {
@@ -1123,6 +1286,10 @@ static void io_acct_cancel_running_work(struct io_wq_acct *acct,
 	raw_spin_unlock(&acct->workers_lock);
 }
 
+/**
+ * Membatalkan pekerjaan yang sedang berjalan di semua akun
+ * Menjalankan pembatalan pada pekerjaan yang sedang dijalankan di seluruh jenis akun
+ */
 static void io_wq_cancel_running_work(struct io_wq *wq,
 				       struct io_cb_cancel_data *match)
 {
@@ -1134,6 +1301,10 @@ static void io_wq_cancel_running_work(struct io_wq *wq,
 	rcu_read_unlock();
 }
 
+/**
+ * Fungsi publik untuk membatalkan pekerjaan berdasarkan fungsi callback
+ * Mencari dan membatalkan pekerjaan dengan mencocokkannya menggunakan fungsi yang disediakan
+ */
 enum io_wq_cancel io_wq_cancel_cb(struct io_wq *wq, work_cancel_fn *cancel,
 				  void *data, bool cancel_all)
 {
@@ -1171,6 +1342,10 @@ enum io_wq_cancel io_wq_cancel_cb(struct io_wq *wq, work_cancel_fn *cancel,
 	return IO_WQ_CANCEL_NOTFOUND;
 }
 
+/**
+ * Callback wait queue yang membangunkan worker yang tertunda
+ * Menghapus entry dari waitqueue dan membangunkan worker yang macet
+ */
 static int io_wq_hash_wake(struct wait_queue_entry *wait, unsigned mode,
 			    int sync, void *key)
 {
@@ -1190,6 +1365,10 @@ static int io_wq_hash_wake(struct wait_queue_entry *wait, unsigned mode,
 	return 1;
 }
 
+/**
+ * Membuat work queue IO baru
+ * Menginisialisasi dan menyiapkan work queue untuk pemrosesan IO asinkron
+ */
 struct io_wq *io_wq_create(unsigned bounded, struct io_wq_data *data)
 {
 	int ret, i;
@@ -1247,6 +1426,10 @@ err:
 	return ERR_PTR(ret);
 }
 
+/**
+ * Memeriksa apakah task_work cocok dengan work queue
+ * Memeriksa apakah callback task_work terkait dengan work queue tertentu
+ */
 static bool io_task_work_match(struct callback_head *cb, void *data)
 {
 	struct io_worker *worker;
@@ -1257,11 +1440,19 @@ static bool io_task_work_match(struct callback_head *cb, void *data)
 	return worker->wq == data;
 }
 
+/**
+ * Memulai proses penghentian work queue
+ * Menandai work queue untuk keluar
+ */
 void io_wq_exit_start(struct io_wq *wq)
 {
 	set_bit(IO_WQ_BIT_EXIT, &wq->state);
 }
 
+/**
+ * Membatalkan pembuatan task_work untuk work queue
+ * Menghapus semua task_work terkait pembuatan worker yang masih tertunda
+ */
 static void io_wq_cancel_tw_create(struct io_wq *wq)
 {
 	struct callback_head *cb;
@@ -1280,6 +1471,10 @@ static void io_wq_cancel_tw_create(struct io_wq *wq)
 	}
 }
 
+/**
+ * Menghentikan semua worker dalam work queue
+ * Membersihkan dan memberhentikan semua worker dalam work queue
+ */
 static void io_wq_exit_workers(struct io_wq *wq)
 {
 	if (!wq->task)
@@ -1301,6 +1496,10 @@ static void io_wq_exit_workers(struct io_wq *wq)
 	wq->task = NULL;
 }
 
+/**
+ * Menghancurkan work queue dan membersihkan sumber dayanya
+ * Membatalkan semua pekerjaan tertunda dan membebaskan sumber daya work queue
+ */
 static void io_wq_destroy(struct io_wq *wq)
 {
 	struct io_cb_cancel_data match = {
@@ -1315,6 +1514,10 @@ static void io_wq_destroy(struct io_wq *wq)
 	kfree(wq);
 }
 
+/**
+ * Menghentikan work queue dan membersihkannya
+ * Menyelesaikan proses penghentian work queue dan membersihkan sumber dayanya
+ */
 void io_wq_put_and_exit(struct io_wq *wq)
 {
 	WARN_ON_ONCE(!test_bit(IO_WQ_BIT_EXIT, &wq->state));
@@ -1328,6 +1531,10 @@ struct online_data {
 	bool online;
 };
 
+/**
+ * Menyesuaikan afinitas CPU untuk worker
+ * Mengatur atau menghapus CPU dari mask afinitas worker
+ */
 static bool io_wq_worker_affinity(struct io_worker *worker, void *data)
 {
 	struct online_data *od = data;
@@ -1339,6 +1546,10 @@ static bool io_wq_worker_affinity(struct io_worker *worker, void *data)
 	return false;
 }
 
+/**
+ * Menangani perubahan status online/offline CPU untuk work queue
+ * Memperbarui afinitas worker ketika status CPU berubah
+ */
 static int __io_wq_cpu_online(struct io_wq *wq, unsigned int cpu, bool online)
 {
 	struct online_data od = {
@@ -1352,6 +1563,10 @@ static int __io_wq_cpu_online(struct io_wq *wq, unsigned int cpu, bool online)
 	return 0;
 }
 
+/**
+ * Callback CPU hotplug saat CPU online
+ * Menangani event CPU online untuk work queue
+ */
 static int io_wq_cpu_online(unsigned int cpu, struct hlist_node *node)
 {
 	struct io_wq *wq = hlist_entry_safe(node, struct io_wq, cpuhp_node);
@@ -1359,6 +1574,10 @@ static int io_wq_cpu_online(unsigned int cpu, struct hlist_node *node)
 	return __io_wq_cpu_online(wq, cpu, true);
 }
 
+/**
+ * Callback CPU hotplug saat CPU offline
+ * Menangani event CPU offline untuk work queue
+ */
 static int io_wq_cpu_offline(unsigned int cpu, struct hlist_node *node)
 {
 	struct io_wq *wq = hlist_entry_safe(node, struct io_wq, cpuhp_node);
@@ -1366,6 +1585,10 @@ static int io_wq_cpu_offline(unsigned int cpu, struct hlist_node *node)
 	return __io_wq_cpu_online(wq, cpu, false);
 }
 
+/**
+ * Mengatur afinitas CPU untuk task io_uring
+ * Menetapkan mask CPU yang diizinkan untuk work queue io_uring
+ */
 int io_wq_cpu_affinity(struct io_uring_task *tctx, cpumask_var_t mask)
 {
 	cpumask_var_t allowed_mask;
@@ -1396,6 +1619,10 @@ int io_wq_cpu_affinity(struct io_uring_task *tctx, cpumask_var_t mask)
 /*
  * Set max number of unbounded workers, returns old value. If new_count is 0,
  * then just return the old value.
+ */
+ /**
+ * Mengatur jumlah maksimum worker dan mengembalikan nilai sebelumnya
+ * Memperbarui batas jumlah worker untuk work queue io_uring
  */
 int io_wq_max_workers(struct io_wq *wq, int *new_count)
 {
@@ -1433,6 +1660,10 @@ int io_wq_max_workers(struct io_wq *wq, int *new_count)
 	return 0;
 }
 
+/**
+ * Inisialisasi subsistem io_wq
+ * Menyiapkan state CPU hotplug untuk work queue io_uring
+ */
 static __init int io_wq_init(void)
 {
 	int ret;
