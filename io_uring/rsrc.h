@@ -222,7 +222,7 @@ static inline bool io_reset_rsrc_node(struct io_ring_ctx *ctx,
     return true;
 }
 
-tatic inline void io_req_put_rsrc_nodes(struct io_kiocb *req)
+static inline void io_req_put_rsrc_nodes(struct io_kiocb *req)
 /**
  * Bebaskan semua node sumber daya yang terkait dengan permintaan.
  * Mengurangi referensi dan membersihkan node sumber daya.

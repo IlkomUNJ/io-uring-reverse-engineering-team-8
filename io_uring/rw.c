@@ -408,7 +408,7 @@ int io_prep_read_fixed(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 	 * Mempersiapkan operasi baca dengan buffer tetap.
 	 * Memanggil fungsi persiapan baca umum dengan flag tertentu.
 	 */
-	return io_prep_rw(req, sqe, ITER_DEST);
+	return __io_prep_rw(req, sqe, ITER_DEST);
 }
 
 int io_prep_write_fixed(struct io_kiocb *req, const struct io_uring_sqe *sqe)
@@ -417,7 +417,7 @@ int io_prep_write_fixed(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 	 * Mempersiapkan operasi tulis dengan buffer tetap.
 	 * Memanggil fungsi persiapan tulis umum dengan flag tertentu.
 	 */
-	return io_prep_rw(req, sqe, ITER_SOURCE);
+	return __io_prep_rw(req, sqe, ITER_SOURCE);
 }
 
 static int io_rw_import_reg_vec(struct io_kiocb *req,

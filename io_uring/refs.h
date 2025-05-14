@@ -36,7 +36,7 @@ static inline bool req_ref_put_and_test_atomic(struct io_kiocb *req)
     return atomic_dec_and_test(&req->refs);
 }
 
-sstatic inline bool req_ref_put_and_test(struct io_kiocb *req)
+static inline bool req_ref_put_and_test(struct io_kiocb *req)
 /**
  * Kurangi referensi permintaan dan uji apakah nol.
  * Mengembalikan true jika referensi menjadi nol setelah pengurangan.
@@ -60,7 +60,7 @@ static inline void req_ref_get(struct io_kiocb *req)
     atomic_inc(&req->refs);
 }
 
-tatic inline void req_ref_put(struct io_kiocb *req)
+static inline void req_ref_put(struct io_kiocb *req)
 /**
  * Kurangi referensi permintaan.
  * Mengurangi satu dari referensi permintaan.
