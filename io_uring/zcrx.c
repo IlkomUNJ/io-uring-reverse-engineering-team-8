@@ -759,6 +759,7 @@ static const struct memory_provider_ops io_uring_pp_zc_ops = {
 	.uninstall		= io_pp_uninstall,
 };
 
+// Fungsi ini membuat dan mengisi Completion Queue Entry (CQE) untuk operasi zero-copy receive
 static bool io_zcrx_queue_cqe(struct io_kiocb *req, struct net_iov *niov,
 			      struct io_zcrx_ifq *ifq, int off, int len)
 {
@@ -782,6 +783,7 @@ static bool io_zcrx_queue_cqe(struct io_kiocb *req, struct net_iov *niov,
 	return true;
 }
 
+// Fungsi ini mengalokasikan buffer fallback (cadangan) dari area zero-copy receive jika buffer utama tidak tersedia
 static struct net_iov *io_zcrx_alloc_fallback(struct io_zcrx_area *area)
 {
 	struct net_iov *niov = NULL;
@@ -796,6 +798,7 @@ static struct net_iov *io_zcrx_alloc_fallback(struct io_zcrx_area *area)
 	return niov;
 }
 
+// Fungsi ini menyalin data dari sumber (baik dari memori biasa atau page) ke buffer fallback yang dialokasikan
 static ssize_t io_zcrx_copy_chunk(struct io_kiocb *req, struct io_zcrx_ifq *ifq,
 				  void *src_base, struct page *src_page,
 				  unsigned int src_offset, size_t len)
@@ -843,6 +846,7 @@ static ssize_t io_zcrx_copy_chunk(struct io_kiocb *req, struct io_zcrx_ifq *ifq,
 	return copied ? copied : ret;
 }
 
+// Fungsi ini menyalin data dari fragmen sk_buff (skb_frag_t) ke buffer fallback menggunakan io_zcrx_copy_chunk
 static int io_zcrx_copy_frag(struct io_kiocb *req, struct io_zcrx_ifq *ifq,
 			     const skb_frag_t *frag, int off, int len)
 {
@@ -890,6 +894,7 @@ static int io_zcrx_recv_frag(struct io_kiocb *req, struct io_zcrx_ifq *ifq,
 	return len;
 }
 
+// Fungsi ini menangani proses menerima data dari sebuah sk_buff (buffer jaringan) secara zero-copy atau fallback copy
 static int
 io_zcrx_recv_skb(read_descriptor_t *desc, struct sk_buff *skb,
 		 unsigned int offset, size_t len)
@@ -992,6 +997,7 @@ out:
 	return offset - start_off;
 }
 
+// Fungsi ini adalah handler utama untuk menerima data TCP secara zero-copy pada io_uring
 static int io_zcrx_tcp_recvmsg(struct io_kiocb *req, struct io_zcrx_ifq *ifq,
 				struct sock *sk, int flags,
 				unsigned issue_flags, unsigned int *outlen)
@@ -1038,6 +1044,7 @@ out:
 	return ret;
 }
 
+// Fungsi ini adalah entry point untuk operasi receive zero-copy pada io_uring
 int io_zcrx_recv(struct io_kiocb *req, struct io_zcrx_ifq *ifq,
 		 struct socket *sock, unsigned int flags,
 		 unsigned issue_flags, unsigned int *len)
