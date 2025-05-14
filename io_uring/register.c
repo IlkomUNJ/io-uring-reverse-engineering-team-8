@@ -38,6 +38,10 @@
 static __cold int io_probe(struct io_ring_ctx *ctx, void __user *arg,
 			   unsigned nr_args)
 {
+	/**
+	 * Memberikan informasi tentang operasi yang didukung oleh io_uring.
+	 * Mengisi struktur probe dengan flag yang menunjukkan dukungan operasi.
+	 */
 	struct io_uring_probe *p;
 	size_t size;
 	int i, ret;
@@ -76,6 +80,10 @@ out:
 
 int io_unregister_personality(struct io_ring_ctx *ctx, unsigned id)
 {
+	/**
+	 * Membatalkan registrasi personality dari konteks io_uring.
+	 * Menghapus kredensial yang terkait dengan ID personality.
+	 */
 	const struct cred *creds;
 
 	creds = xa_erase(&ctx->personalities, id);
@@ -90,6 +98,10 @@ int io_unregister_personality(struct io_ring_ctx *ctx, unsigned id)
 
 static int io_register_personality(struct io_ring_ctx *ctx)
 {
+	/**
+	 * Mendaftarkan personality baru ke konteks io_uring.
+	 * Menyimpan kredensial saat ini dan mengalokasikan ID untuk penggunaan nanti.
+	 */
 	const struct cred *creds;
 	u32 id;
 	int ret;
@@ -108,6 +120,10 @@ static int io_register_personality(struct io_ring_ctx *ctx)
 static __cold int io_parse_restrictions(void __user *arg, unsigned int nr_args,
 					struct io_restriction *restrictions)
 {
+	/**
+	 * Memparsi pembatasan yang ingin diterapkan pada konteks io_uring.
+	 * Mengkonversi daftar pembatasan dari ruang pengguna ke struktur kernel.
+	 */
 	struct io_uring_restriction *res;
 	size_t size;
 	int i, ret;
@@ -158,6 +174,10 @@ err:
 static __cold int io_register_restrictions(struct io_ring_ctx *ctx,
 					   void __user *arg, unsigned int nr_args)
 {
+	/**
+	 * Mendaftarkan pembatasan pada konteks io_uring.
+	 * Hanya diperbolehkan jika ring dimulai dalam keadaan dinonaktifkan.
+	 */
 	int ret;
 
 	/* Restrictions allowed only if rings started disabled */
@@ -179,6 +199,10 @@ static __cold int io_register_restrictions(struct io_ring_ctx *ctx,
 
 static int io_register_enable_rings(struct io_ring_ctx *ctx)
 {
+	/**
+	 * Mengaktifkan ring io_uring yang sebelumnya dinonaktifkan.
+	 * Menetapkan pembatasan dan mengaktifkan pemrosesan permintaan.
+	 */
 	if (!(ctx->flags & IORING_SETUP_R_DISABLED))
 		return -EBADFD;
 
@@ -204,6 +228,10 @@ static int io_register_enable_rings(struct io_ring_ctx *ctx)
 static __cold int __io_register_iowq_aff(struct io_ring_ctx *ctx,
 					 cpumask_var_t new_mask)
 {
+	/**
+	 * Mendaftarkan afinitas CPU untuk io worker queue.
+	 * Menerapkan mask CPU yang diberikan ke worker queue yang sesuai.
+	 */
 	int ret;
 
 	if (!(ctx->flags & IORING_SETUP_SQPOLL)) {
@@ -220,6 +248,10 @@ static __cold int __io_register_iowq_aff(struct io_ring_ctx *ctx,
 static __cold int io_register_iowq_aff(struct io_ring_ctx *ctx,
 				       void __user *arg, unsigned len)
 {
+	/**
+	 * Mendaftarkan afinitas CPU untuk io worker queue dari ruang pengguna.
+	 * Menyalin mask CPU dari pengguna dan menerapkannya ke worker queue.
+	 */
 	cpumask_var_t new_mask;
 	int ret;
 

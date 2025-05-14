@@ -38,6 +38,10 @@ struct io_fixed_install {
 
 static bool io_openat_force_async(struct io_open *open)
 {
+	/**
+	 * Menentukan apakah operasi open harus dijalankan secara asinkron.
+	 * Mengembalikan true jika ada flag yang dapat menyebabkan pemblokiran.
+	 */
 	/*
 	 * Don't bother trying for O_TRUNC, O_CREAT, or O_TMPFILE open,
 	 * it'll always -EAGAIN. Note that we test for __O_TMPFILE because
@@ -49,6 +53,10 @@ static bool io_openat_force_async(struct io_open *open)
 
 static int __io_openat_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 {
+	/**
+	 * Fungsi persiapan internal untuk operasi open.
+	 * Mengekstrak parameter dari SQE dan menyiapkan permintaan untuk eksekusi.
+	 */
 	struct io_open *open = io_kiocb_to_cmd(req, struct io_open);
 	const char __user *fname;
 	int ret;
@@ -84,6 +92,10 @@ static int __io_openat_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe
 
 int io_openat_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 {
+	/**
+	 * Mempersiapkan operasi openat dari antrian submission.
+	 * Mengkonversi parameter flags dan mode menjadi struktur open_how.
+	 */
 	struct io_open *open = io_kiocb_to_cmd(req, struct io_open);
 	u64 mode = READ_ONCE(sqe->len);
 	u64 flags = READ_ONCE(sqe->open_flags);
@@ -94,6 +106,10 @@ int io_openat_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 
 int io_openat2_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 {
+	/**
+	 * Mempersiapkan operasi openat2 dari antrian submission.
+	 * Menyalin struktur open_how dari ruang pengguna ke ruang kernel.
+	 */
 	struct io_open *open = io_kiocb_to_cmd(req, struct io_open);
 	struct open_how __user *how;
 	size_t len;
@@ -113,6 +129,10 @@ int io_openat2_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 
 int io_openat2(struct io_kiocb *req, unsigned int issue_flags)
 {
+	/**
+	 * Mengeksekusi operasi openat2 untuk membuka file.
+	 * Menangani flags, file descriptor, dan manajemen file.
+	 */
 	struct io_open *open = io_kiocb_to_cmd(req, struct io_open);
 	struct open_flags op;
 	struct file *file;
@@ -174,11 +194,19 @@ err:
 
 int io_openat(struct io_kiocb *req, unsigned int issue_flags)
 {
+	/**
+	 * Mengeksekusi operasi openat untuk membuka file.
+	 * Memanggil implementasi openat2 untuk menangani permintaan.
+	 */
 	return io_openat2(req, issue_flags);
 }
 
 void io_open_cleanup(struct io_kiocb *req)
 {
+	/**
+	 * Membersihkan sumber daya yang dialokasikan untuk operasi open.
+	 * Membebaskan nama file jika telah dialokasikan.
+	 */
 	struct io_open *open = io_kiocb_to_cmd(req, struct io_open);
 
 	if (open->filename)
@@ -188,6 +216,10 @@ void io_open_cleanup(struct io_kiocb *req)
 int __io_close_fixed(struct io_ring_ctx *ctx, unsigned int issue_flags,
 		     unsigned int offset)
 {
+	/**
+	 * Menutup file descriptor tetap dari tabel konteks io_uring.
+	 * Menangani penguncian yang diperlukan untuk akses aman.
+	 */
 	int ret;
 
 	io_ring_submit_lock(ctx, issue_flags);
@@ -199,6 +231,10 @@ int __io_close_fixed(struct io_ring_ctx *ctx, unsigned int issue_flags,
 
 static inline int io_close_fixed(struct io_kiocb *req, unsigned int issue_flags)
 {
+	/**
+	 * Menutup file descriptor tetap dari permintaan.
+	 * Memanggil __io_close_fixed dengan offset yang sesuai.
+	 */
 	struct io_close *close = io_kiocb_to_cmd(req, struct io_close);
 
 	return __io_close_fixed(req->ctx, issue_flags, close->file_slot - 1);
@@ -206,6 +242,10 @@ static inline int io_close_fixed(struct io_kiocb *req, unsigned int issue_flags)
 
 int io_close_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 {
+	/**
+	 * Mempersiapkan operasi close dari antrian submission.
+	 * Mengekstrak file descriptor atau slot file tetap yang akan ditutup.
+	 */
 	struct io_close *close = io_kiocb_to_cmd(req, struct io_close);
 
 	if (sqe->off || sqe->addr || sqe->len || sqe->rw_flags || sqe->buf_index)
@@ -223,6 +263,10 @@ int io_close_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 
 int io_close(struct io_kiocb *req, unsigned int issue_flags)
 {
+	/**
+	 * Mengeksekusi operasi close untuk menutup file descriptor.
+	 * Menangani baik file descriptor normal maupun tetap.
+	 */
 	struct files_struct *files = current->files;
 	struct io_close *close = io_kiocb_to_cmd(req, struct io_close);
 	struct file *file;
@@ -262,6 +306,10 @@ err:
 
 int io_install_fixed_fd_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 {
+	/**
+	 * Mempersiapkan operasi pemasangan file descriptor tetap.
+	 * Memvalidasi parameter dan menyiapkan flags untuk pemasangan.
+	 */
 	struct io_fixed_install *ifi;
 	unsigned int flags;
 
@@ -292,6 +340,10 @@ int io_install_fixed_fd_prep(struct io_kiocb *req, const struct io_uring_sqe *sq
 
 int io_install_fixed_fd(struct io_kiocb *req, unsigned int issue_flags)
 {
+	/**
+	 * Mengeksekusi operasi pemasangan file descriptor tetap.
+	 * Menerima file descriptor dan mengaturnya dengan flags yang ditentukan.
+	 */
 	struct io_fixed_install *ifi;
 	int ret;
 
